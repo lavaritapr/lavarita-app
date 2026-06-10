@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>La Varita · Mi tarjeta</title>
+<meta name="description" content="Programa de lealtad La Varita — compra 9, el 10mo va por la casa." />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#262626" />
+<link rel="icon" href="assets/icon-192.png" />
+<link rel="apple-touch-icon" href="assets/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="La Varita" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE4D1; --cream:#F6EFDF; --ink:#262626; --ink-soft:#5A4A3C;
+    --clay:#D7490A; --ember:#F69A49; --oxblood:#B12128; --olive:#3D5633;
+    --hair:rgba(38,38,38,.18);
+    --serif:"Fraunces",Georgia,serif; --mono:"Space Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:var(--serif); line-height:1.5; -webkit-font-smoothing:antialiased;
+    min-height:100dvh; padding-bottom:env(safe-area-inset-bottom);
+  }
+  ::selection{background:var(--ember);color:var(--ink);}
+  .mono{font-family:var(--mono);}
+  .hide{display:none !important;}
+  .wrap{max-width:480px;margin:0 auto;padding:0 20px;}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(237,228,209,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--hair);}
+  .topbar .in{max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 20px;}
+  .brand{display:flex;align-items:center;gap:.6em;font-family:var(--mono);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;}
+  .blip{width:8px;height:8px;border-radius:50%;background:var(--clay);box-shadow:0 0 0 3px rgba(215,73,10,.18);}
+  .topbar .actions{display:flex;gap:10px;align-items:center;}
+  .langtoggle,.iconbtn{border:1px solid var(--ink);background:transparent;color:var(--ink);font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;padding:.4em .6em;cursor:pointer;border-radius:3px;}
+  .langtoggle .off{opacity:.35;}
+  .iconbtn:active,.langtoggle:active{background:var(--ink);color:var(--cream);}
+
+  /* ---------- auth ---------- */
+  .auth{padding:36px 20px 60px;text-align:center;}
+  .auth .seal{width:110px;transform:rotate(6deg);filter:drop-shadow(0 8px 14px rgba(38,38,38,.2));margin-bottom:10px;}
+  .auth h1{font-weight:300;font-size:2.1rem;letter-spacing:-.02em;margin:.2em 0 .1em;}
+  .auth h1 em{font-style:italic;font-weight:500;color:var(--clay);}
+  .auth .tag{font-family:var(--mono);font-size:.64rem;letter-spacing:.26em;text-transform:uppercase;color:var(--oxblood);}
+  .tabs{display:flex;border:1.5px solid var(--ink);border-radius:6px;overflow:hidden;margin:28px 0 20px;}
+  .tabs button{flex:1;padding:.85em;font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;background:transparent;border:none;color:var(--ink);cursor:pointer;}
+  .tabs button.on{background:var(--ink);color:var(--cream);}
+  form{display:grid;gap:14px;text-align:left;}
+  label{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  input{width:100%;font-family:var(--serif);font-size:1.05rem;padding:.75em .9em;border:1.5px solid var(--hair);border-radius:6px;background:var(--cream);color:var(--ink);}
+  input:focus{outline:none;border-color:var(--clay);}
+  .btn{display:block;width:100%;font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;padding:1em;border-radius:5px;border:2px solid var(--ink);background:var(--ink);color:var(--cream);cursor:pointer;}
+  .btn:active{background:var(--oxblood);border-color:var(--oxblood);}
+  .msg{font-family:var(--mono);font-size:.74rem;min-height:1.3em;text-align:center;letter-spacing:.02em;}
+  .msg.err{color:var(--oxblood);} .msg.ok{color:var(--olive);}
+
+  /* ---------- home ---------- */
+  .home{padding:24px 20px 80px;}
+  .hello{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .hello h2{font-weight:300;font-size:1.75rem;letter-spacing:-.02em;margin:0;}
+  .hello h2 em{font-style:italic;font-weight:500;color:var(--clay);}
+  .founder{display:inline-flex;align-items:center;gap:.45em;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;background:var(--oxblood);color:var(--cream);padding:.45em .7em;border-radius:3px;}
+  .reward-banner{margin-top:16px;background:var(--oxblood);color:var(--cream);border-radius:8px;padding:14px 16px;font-size:1rem;display:flex;gap:.6em;align-items:center;box-shadow:0 10px 24px rgba(177,33,40,.3);}
+
+  .ticket{background:var(--cream);border-radius:10px;padding:22px;position:relative;margin-top:22px;box-shadow:0 16px 36px rgba(38,38,38,.16);transform:rotate(-.6deg);}
+  .ticket::before,.ticket::after{content:"";position:absolute;left:0;right:0;height:12px;background-image:radial-gradient(circle at 6px 6px, var(--paper) 4.5px, transparent 5.5px);background-size:16px 12px;background-position:center;}
+  .ticket::before{top:-6px;} .ticket::after{bottom:-6px;}
+  .thead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px dashed var(--hair);padding-bottom:12px;margin-bottom:16px;}
+  .thead h3{font-weight:500;font-size:1.25rem;margin:0;}
+  .thead .sub{font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-top:.5em;}
+  .thead .count{font-family:var(--mono);font-weight:700;font-size:.74rem;color:var(--oxblood);text-align:right;}
+  .holes{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+  .hole{aspect-ratio:1;border:2px dashed var(--clay);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.66rem;color:var(--clay);}
+  .hole.p{background:var(--clay);border-style:solid;color:var(--cream);transform:scale(.96) rotate(-8deg);}
+  .hole.p::after{content:"✶";font-size:1rem;}
+  .hole.p span{display:none;}
+  .hole.free{border-color:var(--oxblood);color:var(--oxblood);font-weight:700;}
+  .hole.free.win{background:var(--oxblood);border-style:solid;color:var(--cream);box-shadow:0 0 0 4px rgba(177,33,40,.22);}
+
+  .qrcard{margin-top:26px;background:var(--ink);color:var(--cream);border-radius:10px;padding:24px;text-align:center;}
+  .qrcard h3{font-weight:400;font-size:1.1rem;margin:0 0 4px;}
+  .qrcard .mono-sub{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);}
+  .qrbox{background:var(--cream);border-radius:8px;width:208px;height:208px;margin:16px auto 10px;display:flex;align-items:center;justify-content:center;}
+  .qrbox canvas{border-radius:4px;}
+  .membercode{font-family:var(--mono);font-weight:700;font-size:1.05rem;letter-spacing:.22em;}
+
+  .specials{margin-top:30px;}
+  .specials h3{font-weight:300;font-size:1.4rem;margin:0 0 4px;}
+  .specials h3 em{font-style:italic;color:var(--clay);font-weight:500;}
+  .special{border-top:1.5px solid var(--ink);padding:14px 0;}
+  .special .t{font-weight:500;font-size:1.05rem;}
+  .special .b{color:var(--ink-soft);font-size:.95rem;margin-top:.2em;}
+  .none{font-family:var(--mono);font-size:.7rem;color:var(--ink-soft);letter-spacing:.06em;padding:10px 0;}
+
+  .foot{margin-top:40px;text-align:center;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--hair);border-top-color:var(--clay);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+  .loading{padding:80px 0;text-align:center;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="in">
+    <div class="brand"><span class="blip"></span><span>La Varita</span></div>
+    <div class="actions">
+      <button class="langtoggle" id="lang"><b class="es">ES</b> <span class="off en">EN</span></button>
+      <button class="iconbtn hide" id="logout" data-en="Sign out">Salir</button>
+    </div>
+  </div>
+</header>
+
+<!-- ====== loading ====== -->
+<div class="loading" id="view-loading"><span class="spin"></span>&nbsp; Cargando…</div>
+
+<!-- ====== auth ====== -->
+<div class="wrap auth hide" id="view-auth">
+  <img class="seal" src="assets/lavarita-seal.png" alt="La Varita" />
+  <h1 data-en="Your card, <em>your reward</em>.">Tu tarjeta, <em>tu recompensa</em>.</h1>
+  <div class="tag" data-en="Buy 9 · the 10th on the house">Compra 9 · el 10mo por la casa</div>
+
+  <div class="tabs">
+    <button id="tab-login" class="on" data-en="Sign in">Entrar</button>
+    <button id="tab-signup" data-en="Join">Únete</button>
+  </div>
+
+  <form id="form-login">
+    <div><label data-en="Email">Correo electrónico</label><input type="email" id="li-email" required autocomplete="email" /></div>
+    <div><label data-en="Password">Contraseña</label><input type="password" id="li-pass" required autocomplete="current-password" /></div>
+    <button class="btn" type="submit" data-en="Sign in">Entrar</button>
+    <p class="msg" id="li-msg"></p>
+  </form>
+
+  <form id="form-signup" class="hide">
+    <div><label data-en="Name">Nombre</label><input type="text" id="su-name" required autocomplete="name" /></div>
+    <div><label data-en="Email">Correo electrónico</label><input type="email" id="su-email" required autocomplete="email" /></div>
+    <div><label data-en="Password (min. 8)">Contraseña (mín. 8)</label><input type="password" id="su-pass" required minlength="8" autocomplete="new-password" /></div>
+    <button class="btn" type="submit" data-en="Create my card">Crear mi tarjeta</button>
+    <p class="msg" id="su-msg"></p>
+  </form>
+</div>
+
+<!-- ====== home ====== -->
+<div class="wrap home hide" id="view-home">
+  <div class="hello">
+    <h2 id="greet">¡Hola!</h2>
+    <span class="founder hide" id="founder">✶ <span data-en="Founding member">Miembro fundador</span></span>
+  </div>
+
+  <div class="reward-banner hide" id="reward-banner">🔥 <span data-en="You have a FREE plate waiting — show your code at the register!">¡Tienes un plato GRATIS esperando — muestra tu código en caja!</span></div>
+
+  <div class="ticket">
+    <div class="thead">
+      <div>
+        <h3 data-en="Punch card">Tarjeta de sellos</h3>
+        <div class="sub" data-en="Buy 9 · 10th free">Compra 9 · el 10mo gratis</div>
+      </div>
+      <div class="count"><span id="count">0</span><span data-en=" / 9"> / 9</span></div>
+    </div>
+    <div class="holes" id="holes"></div>
+  </div>
+
+  <div class="qrcard">
+    <h3 data-en="Your code">Tu código</h3>
+    <div class="mono-sub" data-en="Show it at the register to earn stamps">Muéstralo en caja para ganar sellos</div>
+    <div class="qrbox"><canvas id="qr"></canvas></div>
+    <div class="membercode" id="membercode">—</div>
+  </div>
+
+  <div class="specials">
+    <h3 data-en="Specials <em>&amp; news</em>">Especiales <em>y noticias</em></h3>
+    <div id="specials-list"><div class="none" data-en="Nothing yet — stay tuned!">Pronto — ¡mantente pendiente!</div></div>
+  </div>
+
+  <div class="foot">La Varita · Asado con tradición · Ponce, P.R.</div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import QRCode from 'https://esm.sh/qrcode@1.5.4';
+
+const SUPABASE_URL = 'https://wfltluwbiyowxriastwx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9NDWk6F7yKav-70S36wYPQ_Ra1KX5-F';
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ---------- i18n (same data-en pattern as the landing page) ---------- */
+let lang = localStorage.getItem('lv_lang') || 'es';
+const i18nNodes = [...document.querySelectorAll('[data-en]')];
+i18nNodes.forEach(n => n.setAttribute('data-es', n.innerHTML));
+const langBtn = document.getElementById('lang');
+function applyLang() {
+  i18nNodes.forEach(n => { const h = n.getAttribute(lang === 'en' ? 'data-en' : 'data-es'); if (h !== null) n.innerHTML = h; });
+  document.documentElement.lang = lang;
+  langBtn.querySelector('.es').classList.toggle('off', lang !== 'es');
+  langBtn.querySelector('.en').classList.toggle('off', lang !== 'en');
+}
+langBtn.addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; localStorage.setItem('lv_lang', lang); applyLang(); });
+const t = (es, en) => lang === 'en' ? en : es;
+
+/* ---------- views ---------- */
+const views = { loading: el('view-loading'), auth: el('view-auth'), home: el('view-home') };
+function el(id) { return document.getElementById(id); }
+function show(name) {
+  Object.entries(views).forEach(([k, v]) => v.classList.toggle('hide', k !== name));
+  el('logout').classList.toggle('hide', name !== 'home');
+}
+
+/* ---------- auth tabs ---------- */
+el('tab-login').addEventListener('click', () => switchTab('login'));
+el('tab-signup').addEventListener('click', () => switchTab('signup'));
+function switchTab(which) {
+  el('tab-login').classList.toggle('on', which === 'login');
+  el('tab-signup').classList.toggle('on', which === 'signup');
+  el('form-login').classList.toggle('hide', which !== 'login');
+  el('form-signup').classList.toggle('hide', which !== 'signup');
+}
+
+/* ---------- sign up ---------- */
+el('form-signup').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = el('su-msg'); msg.className = 'msg'; msg.textContent = t('Creando…', 'Creating…');
+  const { data, error } = await db.auth.signUp({
+    email: el('su-email').value.trim(),
+    password: el('su-pass').value,
+    options: { data: { name: el('su-name').value.trim() }, emailRedirectTo: location.origin + location.pathname }
+  });
+  if (error) { msg.className = 'msg err'; msg.textContent = error.message; return; }
+  if (data.session) return; // signed straight in — onAuthStateChange takes over
+  msg.className = 'msg ok';
+  msg.textContent = t('📬 Revisa tu correo para confirmar tu cuenta.', '📬 Check your email to confirm your account.');
+});
+
+/* ---------- sign in ---------- */
+el('form-login').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = el('li-msg'); msg.className = 'msg'; msg.textContent = t('Entrando…', 'Signing in…');
+  const { error } = await db.auth.signInWithPassword({ email: el('li-email').value.trim(), password: el('li-pass').value });
+  if (error) {
+    msg.className = 'msg err';
+    msg.textContent = /confirm/i.test(error.message)
+      ? t('Confirma tu correo primero — revisa tu bandeja.', 'Confirm your email first — check your inbox.')
+      : t('Correo o contraseña incorrectos.', 'Wrong email or password.');
+    return;
+  }
+  msg.textContent = '';
+});
+
+el('logout').addEventListener('click', () => db.auth.signOut());
+
+/* ---------- home data ---------- */
+async function loadHome(user) {
+  const [{ data: profile }, { data: cards }, { data: specials }] = await Promise.all([
+    db.from('profiles').select('*').eq('id', user.id).single(),
+    db.from('punch_cards').select('*').is('redeemed_at', null).order('created_at'),
+    db.from('specials').select('*').eq('published', true).order('created_at', { ascending: false }).limit(10)
+  ]);
+  if (!profile) { show('auth'); return; }
+
+  const first = (profile.name || '').split(' ')[0] || t('hola', 'hi');
+  el('greet').innerHTML = t(`¡Hola, <em>${esc(first)}</em>!`, `Hi, <em>${esc(first)}</em>!`);
+  el('founder').classList.toggle('hide', !profile.founding_member);
+
+  const active = (cards || []).find(c => c.punches < 9) || { punches: 0 };
+  const rewardReady = (cards || []).some(c => c.punches >= 9);
+  el('reward-banner').classList.toggle('hide', !rewardReady);
+  el('count').textContent = active.punches;
+
+  const holes = el('holes'); holes.innerHTML = '';
+  for (let i = 0; i < 9; i++) {
+    const h = document.createElement('div');
+    h.className = 'hole' + (i < active.punches ? ' p' : '');
+    h.innerHTML = `<span>${i + 1}</span>`;
+    holes.appendChild(h);
+  }
+  const free = document.createElement('div');
+  free.className = 'hole free' + (rewardReady ? ' win' : '');
+  free.innerHTML = `<span>${t('GRATIS', 'FREE')}</span>`;
+  holes.appendChild(free);
+
+  el('membercode').textContent = profile.member_code;
+  QRCode.toCanvas(el('qr'), profile.member_code, { width: 192, margin: 1, color: { dark: '#262626', light: '#F6EFDF' } });
+
+  const list = el('specials-list');
+  if (specials && specials.length) {
+    list.innerHTML = specials.map(s => `
+      <div class="special">
+        <div class="t">${esc(lang === 'en' ? s.title_en : s.title_es)}</div>
+        ${(s.body_es || s.body_en) ? `<div class="b">${esc(lang === 'en' ? (s.body_en || '') : (s.body_es || ''))}</div>` : ''}
+      </div>`).join('');
+  }
+  show('home');
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* ---------- session wiring ---------- */
+db.auth.onAuthStateChange((_event, session) => {
+  if (session?.user) loadHome(session.user);
+  else show('auth');
+});
+
+// refresh card when returning to the app (e.g., right after a staff scan)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') {
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user && !views.home.classList.contains('hide')) loadHome(session.user);
+  }
+});
+
+applyLang();
+
+/* ---------- PWA ---------- */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>

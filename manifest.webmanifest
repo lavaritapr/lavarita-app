@@ -1,0 +1,16 @@
+{
+  "name": "La Varita",
+  "short_name": "La Varita",
+  "description": "Programa de lealtad La Varita — compra 9, el 10mo va por la casa.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EDE4D1",
+  "theme_color": "#262626",
+  "lang": "es",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
