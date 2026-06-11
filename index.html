@@ -94,9 +94,14 @@
 
   /* ---------- feedback ---------- */
   .fbcard{margin-top:26px;background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:20px;}
-  .fbtabs{display:flex;border:1.5px solid var(--ink);border-radius:6px;overflow:hidden;margin-bottom:16px;}
-  .fbtabs button{flex:1;padding:.7em;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;background:transparent;border:none;color:var(--ink);cursor:pointer;}
-  .fbtabs button.on{background:var(--ink);color:var(--cream);}
+  .fbcard h3{font-weight:500;font-size:1.3rem;margin:0 0 2px;}
+  .fbcard .fbsub{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--oxblood);margin-bottom:12px;}
+  .fb-preview{position:relative;display:none;margin:12px 0 4px;width:120px;}
+  .fb-preview img{width:120px;height:120px;object-fit:cover;border-radius:8px;border:1.5px solid var(--ink);display:block;}
+  .fb-preview button{position:absolute;top:-9px;right:-9px;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--cream);background:var(--oxblood);color:var(--cream);font-size:.8rem;line-height:1;cursor:pointer;padding:0;}
+  .fb-disclosure{display:none;background:var(--paper);border:1px dashed var(--hair);border-radius:6px;padding:10px 12px;margin:10px 0 2px;font-size:.78rem;line-height:1.5;color:var(--ink-soft);}
+  .fb-disclosure .agree{display:flex;gap:.6em;align-items:flex-start;font-size:.85rem;color:var(--ink);margin-top:8px;cursor:pointer;font-weight:600;}
+  .fb-disclosure .agree input{width:auto;margin:2px 0 0;}
   .fbrow{display:flex;align-items:center;justify-content:space-between;padding:.45em 0;}
   .fbrow .lbl{font-size:1rem;}
   .stars{display:flex;gap:6px;}
@@ -193,20 +198,27 @@
   </div>
 
   <div class="fbcard">
-    <div class="fbtabs">
-      <button type="button" id="fb-tab-visit" class="on" data-en="Rate your visit">Califica tu visita</button>
-      <button type="button" id="fb-tab-sugg" data-en="Suggestions">Sugerencias</button>
-    </div>
+    <h3 data-en="Rate your visit">Califica tu visita</h3>
+    <div class="fbsub" data-en="Your opinion feeds the fire">Tu opinión alimenta la candela</div>
     <form id="fbform">
       <div id="fb-ratings">
         <div class="fbrow"><span class="lbl" data-en="Food">Comida</span><div class="stars" data-key="food"></div></div>
         <div class="fbrow"><span class="lbl" data-en="Service">Servicio</span><div class="stars" data-key="service"></div></div>
         <div class="fbrow"><span class="lbl" data-en="Speed">Rapidez</span><div class="stars" data-key="speed"></div></div>
+        <div class="fbrow"><span class="lbl" data-en="Price">Precio</span><div class="stars" data-key="price"></div></div>
       </div>
-      <textarea id="fb-comment" placeholder="Cuéntanos cómo estuvo… (opcional)" data-en-ph="Tell us how it was… (optional)"></textarea>
+      <textarea id="fb-comment" placeholder="Comentarios o sugerencias… (opcional)" data-en-ph="Comments or suggestions… (optional)"></textarea>
       <label class="fb-photo-btn">📸 <span data-en="Photo of your plate">Foto de tu plato</span>
         <input type="file" id="fb-photo" accept="image/*" capture="environment" hidden />
-      </label><span class="fb-file" id="fb-file"></span>
+      </label>
+      <div class="fb-preview" id="fb-preview">
+        <img id="fb-preview-img" alt="Foto seleccionada" />
+        <button type="button" id="fb-photo-del" aria-label="Quitar foto">✕</button>
+      </div>
+      <div class="fb-disclosure" id="fb-disclosure">
+        <span data-en="By submitting a photo you confirm that it belongs to you and you grant ALC PONCE LLC (d/b/a La Varita) a perpetual, royalty-free authorization to use, edit, reproduce, and publish it, at any time and without compensation or prior notice, in marketing and promotional materials, including social media, website, and print. Your name will not be published without your permission. You may request its removal by writing to admin@lavaritapr.com.">Al enviar una foto confirmas que te pertenece y autorizas a ALC PONCE LLC (h/n/c La Varita), de forma perpetua y libre de regalías, a usarla, editarla, reproducirla y publicarla, en cualquier momento y sin compensación ni aviso previo, en materiales de mercadeo y promoción, incluyendo redes sociales, sitio web e impresos. Tu nombre no será publicado sin tu permiso. Puedes solicitar su eliminación escribiendo a admin@lavaritapr.com.</span>
+        <label class="agree"><input type="checkbox" id="fb-consent" /> <span data-en="I agree to the use of my photo">Acepto el uso de mi foto</span></label>
+      </div>
       <button class="btn" type="submit" data-en="Send">Enviar</button>
       <p class="msg" id="fb-msg" role="status"></p>
     </form>
@@ -340,9 +352,8 @@ async function loadHome(user) {
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-/* ---------- feedback: ratings, suggestions, plate photos ---------- */
-let fbMode = 'visit';
-const fbRatings = { food: 0, service: 0, speed: 0 };
+/* ---------- feedback: ratings, comments/suggestions, plate photos ---------- */
+const fbRatings = { food: 0, service: 0, speed: 0, price: 0 };
 document.querySelectorAll('.stars').forEach(box => {
   const key = box.dataset.key;
   for (let i = 1; i <= 5; i++) {
@@ -353,37 +364,45 @@ document.querySelectorAll('.stars').forEach(box => {
   }
 });
 function paintStars(box, n) { [...box.children].forEach((b, i) => b.classList.toggle('on', i < n)); }
-function setFbMode(m) {
-  fbMode = m;
-  el('fb-tab-visit').classList.toggle('on', m === 'visit');
-  el('fb-tab-sugg').classList.toggle('on', m === 'suggestion');
-  el('fb-ratings').style.display = m === 'visit' ? '' : 'none';
+
+let fbObjectUrl = null;
+function clearPhoto() {
+  el('fb-photo').value = '';
+  if (fbObjectUrl) { URL.revokeObjectURL(fbObjectUrl); fbObjectUrl = null; }
+  el('fb-preview').style.display = 'none';
+  el('fb-disclosure').style.display = 'none';
+  el('fb-consent').checked = false;
 }
-el('fb-tab-visit').addEventListener('click', () => setFbMode('visit'));
-el('fb-tab-sugg').addEventListener('click', () => setFbMode('suggestion'));
 el('fb-photo').addEventListener('change', () => {
   const f = el('fb-photo').files[0];
-  el('fb-file').textContent = f ? (f.name.length > 22 ? f.name.slice(0, 19) + '…' : f.name) : '';
+  if (!f) { clearPhoto(); return; }
+  if (fbObjectUrl) URL.revokeObjectURL(fbObjectUrl);
+  fbObjectUrl = URL.createObjectURL(f);
+  el('fb-preview-img').src = fbObjectUrl;
+  el('fb-preview').style.display = 'block';
+  el('fb-disclosure').style.display = 'block';
+  el('fb-consent').checked = false;
 });
+el('fb-photo-del').addEventListener('click', clearPhoto);
+
 el('fbform').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = el('fb-msg'); msg.className = 'msg';
   const { data: { session } } = await db.auth.getSession();
   if (!session) return;
-  const comment = el('fb-comment').value.trim();
-  if (fbMode === 'visit' && (!fbRatings.food || !fbRatings.service || !fbRatings.speed)) {
+  if (!fbRatings.food || !fbRatings.service || !fbRatings.speed || !fbRatings.price) {
     msg.className = 'msg err';
-    msg.textContent = t('Toca las estrellas para calificar comida, servicio y rapidez.', 'Tap the stars to rate food, service and speed.');
+    msg.textContent = t('Toca las estrellas para calificar comida, servicio, rapidez y precio.', 'Tap the stars to rate food, service, speed and price.');
     return;
   }
-  if (fbMode === 'suggestion' && !comment) {
+  const file = el('fb-photo').files[0];
+  if (file && !el('fb-consent').checked) {
     msg.className = 'msg err';
-    msg.textContent = t('Escríbenos tu sugerencia.', 'Write your suggestion.');
+    msg.textContent = t('Para enviar tu foto, acepta el uso de la imagen (o quítala).', 'To send your photo, accept the image-use terms (or remove it).');
     return;
   }
   msg.textContent = t('Enviando…', 'Sending…');
   let photo_path = null;
-  const file = el('fb-photo').files[0];
   if (file) {
     if (file.size > 8 * 1024 * 1024) {
       msg.className = 'msg err';
@@ -396,12 +415,20 @@ el('fbform').addEventListener('submit', async (e) => {
     if (upErr) { msg.className = 'msg err'; msg.textContent = t('No se pudo subir la foto.', 'Photo upload failed.'); return; }
     photo_path = path;
   }
-  const row = { customer_id: session.user.id, type: fbMode, comment: comment || null, photo_path };
-  if (fbMode === 'visit') { row.rating_food = fbRatings.food; row.rating_service = fbRatings.service; row.rating_speed = fbRatings.speed; }
-  const { error } = await db.from('feedback').insert(row);
+  const { error } = await db.from('feedback').insert({
+    customer_id: session.user.id,
+    type: 'visit',
+    rating_food: fbRatings.food,
+    rating_service: fbRatings.service,
+    rating_speed: fbRatings.speed,
+    rating_price: fbRatings.price,
+    comment: el('fb-comment').value.trim() || null,
+    photo_path,
+    photo_consent: !!photo_path
+  });
   if (error) { msg.className = 'msg err'; msg.textContent = t('Algo falló — intenta de nuevo.', 'Something failed — try again.'); return; }
-  el('fbform').reset(); el('fb-file').textContent = '';
-  fbRatings.food = fbRatings.service = fbRatings.speed = 0;
+  el('fbform').reset(); clearPhoto();
+  fbRatings.food = fbRatings.service = fbRatings.speed = fbRatings.price = 0;
   document.querySelectorAll('.stars').forEach(b => paintStars(b, 0));
   msg.className = 'msg ok';
   msg.textContent = t('🔥 ¡Gracias! Tu opinión alimenta la candela.', '🔥 Thanks! Your feedback feeds the fire.');
