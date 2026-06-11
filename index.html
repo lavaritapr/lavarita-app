@@ -92,6 +92,23 @@
   .qrbox canvas{border-radius:4px;}
   .membercode{font-family:var(--mono);font-weight:700;font-size:1.05rem;letter-spacing:.22em;}
 
+  /* ---------- feedback ---------- */
+  .fbcard{margin-top:26px;background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:20px;}
+  .fbtabs{display:flex;border:1.5px solid var(--ink);border-radius:6px;overflow:hidden;margin-bottom:16px;}
+  .fbtabs button{flex:1;padding:.7em;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;background:transparent;border:none;color:var(--ink);cursor:pointer;}
+  .fbtabs button.on{background:var(--ink);color:var(--cream);}
+  .fbrow{display:flex;align-items:center;justify-content:space-between;padding:.45em 0;}
+  .fbrow .lbl{font-size:1rem;}
+  .stars{display:flex;gap:6px;}
+  .star{width:34px;height:34px;border:1.5px dashed var(--clay);border-radius:50%;background:transparent;color:var(--clay);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+  .star.on{background:var(--clay);border-style:solid;color:var(--cream);}
+  textarea{width:100%;font-family:var(--serif);font-size:1rem;padding:.75em .9em;border:1.5px solid var(--hair);border-radius:6px;background:var(--paper);color:var(--ink);min-height:74px;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--clay);}
+  .fb-photo-btn{display:inline-flex;align-items:center;gap:.5em;font-family:var(--mono);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;border:1.5px dashed var(--ink);border-radius:5px;padding:.7em 1em;cursor:pointer;margin:10px 0 4px;}
+  .fb-photo-btn:active{background:var(--ink);color:var(--cream);}
+  .fb-file{font-family:var(--mono);font-size:.62rem;color:var(--olive);margin-left:.6em;}
+  .fbcard .btn{margin-top:12px;}
+
   .specials{margin-top:30px;}
   .specials h3{font-weight:300;font-size:1.4rem;margin:0 0 4px;}
   .specials h3 em{font-style:italic;color:var(--clay);font-weight:500;}
@@ -175,6 +192,26 @@
     <div class="membercode" id="membercode">—</div>
   </div>
 
+  <div class="fbcard">
+    <div class="fbtabs">
+      <button type="button" id="fb-tab-visit" class="on" data-en="Rate your visit">Califica tu visita</button>
+      <button type="button" id="fb-tab-sugg" data-en="Suggestions">Sugerencias</button>
+    </div>
+    <form id="fbform">
+      <div id="fb-ratings">
+        <div class="fbrow"><span class="lbl" data-en="Food">Comida</span><div class="stars" data-key="food"></div></div>
+        <div class="fbrow"><span class="lbl" data-en="Service">Servicio</span><div class="stars" data-key="service"></div></div>
+        <div class="fbrow"><span class="lbl" data-en="Speed">Rapidez</span><div class="stars" data-key="speed"></div></div>
+      </div>
+      <textarea id="fb-comment" placeholder="Cuéntanos cómo estuvo… (opcional)" data-en-ph="Tell us how it was… (optional)"></textarea>
+      <label class="fb-photo-btn">📸 <span data-en="Photo of your plate">Foto de tu plato</span>
+        <input type="file" id="fb-photo" accept="image/*" capture="environment" hidden />
+      </label><span class="fb-file" id="fb-file"></span>
+      <button class="btn" type="submit" data-en="Send">Enviar</button>
+      <p class="msg" id="fb-msg" role="status"></p>
+    </form>
+  </div>
+
   <div class="specials">
     <h3 data-en="Specials <em>&amp; news</em>">Especiales <em>y noticias</em></h3>
     <div id="specials-list"><div class="none" data-en="Nothing yet — stay tuned!">Pronto — ¡mantente pendiente!</div></div>
@@ -195,9 +232,12 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 let lang = localStorage.getItem('lv_lang') || 'es';
 const i18nNodes = [...document.querySelectorAll('[data-en]')];
 i18nNodes.forEach(n => n.setAttribute('data-es', n.innerHTML));
+const phNodes = [...document.querySelectorAll('[data-en-ph]')];
+phNodes.forEach(n => n.setAttribute('data-es-ph', n.getAttribute('placeholder') || ''));
 const langBtn = document.getElementById('lang');
 function applyLang() {
   i18nNodes.forEach(n => { const h = n.getAttribute(lang === 'en' ? 'data-en' : 'data-es'); if (h !== null) n.innerHTML = h; });
+  phNodes.forEach(n => { const p = n.getAttribute(lang === 'en' ? 'data-en-ph' : 'data-es-ph'); if (p !== null) n.setAttribute('placeholder', p); });
   document.documentElement.lang = lang;
   langBtn.querySelector('.es').classList.toggle('off', lang !== 'es');
   langBtn.querySelector('.en').classList.toggle('off', lang !== 'en');
@@ -299,6 +339,73 @@ async function loadHome(user) {
   show('home');
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* ---------- feedback: ratings, suggestions, plate photos ---------- */
+let fbMode = 'visit';
+const fbRatings = { food: 0, service: 0, speed: 0 };
+document.querySelectorAll('.stars').forEach(box => {
+  const key = box.dataset.key;
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'star'; b.textContent = '✶'; b.setAttribute('aria-label', key + ' ' + i);
+    b.addEventListener('click', () => { fbRatings[key] = i; paintStars(box, i); });
+    box.appendChild(b);
+  }
+});
+function paintStars(box, n) { [...box.children].forEach((b, i) => b.classList.toggle('on', i < n)); }
+function setFbMode(m) {
+  fbMode = m;
+  el('fb-tab-visit').classList.toggle('on', m === 'visit');
+  el('fb-tab-sugg').classList.toggle('on', m === 'suggestion');
+  el('fb-ratings').style.display = m === 'visit' ? '' : 'none';
+}
+el('fb-tab-visit').addEventListener('click', () => setFbMode('visit'));
+el('fb-tab-sugg').addEventListener('click', () => setFbMode('suggestion'));
+el('fb-photo').addEventListener('change', () => {
+  const f = el('fb-photo').files[0];
+  el('fb-file').textContent = f ? (f.name.length > 22 ? f.name.slice(0, 19) + '…' : f.name) : '';
+});
+el('fbform').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = el('fb-msg'); msg.className = 'msg';
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) return;
+  const comment = el('fb-comment').value.trim();
+  if (fbMode === 'visit' && (!fbRatings.food || !fbRatings.service || !fbRatings.speed)) {
+    msg.className = 'msg err';
+    msg.textContent = t('Toca las estrellas para calificar comida, servicio y rapidez.', 'Tap the stars to rate food, service and speed.');
+    return;
+  }
+  if (fbMode === 'suggestion' && !comment) {
+    msg.className = 'msg err';
+    msg.textContent = t('Escríbenos tu sugerencia.', 'Write your suggestion.');
+    return;
+  }
+  msg.textContent = t('Enviando…', 'Sending…');
+  let photo_path = null;
+  const file = el('fb-photo').files[0];
+  if (file) {
+    if (file.size > 8 * 1024 * 1024) {
+      msg.className = 'msg err';
+      msg.textContent = t('La foto es muy grande (máx. 8MB).', 'Photo too large (max 8MB).');
+      return;
+    }
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = session.user.id + '/' + Date.now() + '.' + ext;
+    const { error: upErr } = await db.storage.from('plates').upload(path, file);
+    if (upErr) { msg.className = 'msg err'; msg.textContent = t('No se pudo subir la foto.', 'Photo upload failed.'); return; }
+    photo_path = path;
+  }
+  const row = { customer_id: session.user.id, type: fbMode, comment: comment || null, photo_path };
+  if (fbMode === 'visit') { row.rating_food = fbRatings.food; row.rating_service = fbRatings.service; row.rating_speed = fbRatings.speed; }
+  const { error } = await db.from('feedback').insert(row);
+  if (error) { msg.className = 'msg err'; msg.textContent = t('Algo falló — intenta de nuevo.', 'Something failed — try again.'); return; }
+  el('fbform').reset(); el('fb-file').textContent = '';
+  fbRatings.food = fbRatings.service = fbRatings.speed = 0;
+  document.querySelectorAll('.stars').forEach(b => paintStars(b, 0));
+  msg.className = 'msg ok';
+  msg.textContent = t('🔥 ¡Gracias! Tu opinión alimenta la candela.', '🔥 Thanks! Your feedback feeds the fire.');
+});
 
 /* ---------- session wiring ---------- */
 db.auth.onAuthStateChange((_event, session) => {
