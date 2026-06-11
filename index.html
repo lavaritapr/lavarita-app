@@ -64,6 +64,8 @@
   .btn{display:block;width:100%;font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;padding:1em;border-radius:5px;border:2px solid var(--ink);background:var(--ink);color:var(--cream);cursor:pointer;}
   .btn:active{background:var(--oxblood);border-color:var(--oxblood);}
   .msg{font-family:var(--mono);font-size:.74rem;min-height:1.3em;text-align:center;letter-spacing:.02em;}
+  .forgot{text-align:center;margin:2px 0 0;font-size:.92rem;}
+  .forgot a{color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;}
   .msg.err{color:var(--oxblood);} .msg.ok{color:var(--olive);}
 
   /* ---------- home ---------- */
@@ -168,6 +170,7 @@
     <div><label data-en="Email">Correo electrónico</label><input type="email" id="li-email" required autocomplete="email" /></div>
     <div><label data-en="Password">Contraseña</label><input type="password" id="li-pass" required autocomplete="current-password" /></div>
     <button class="btn" type="submit" data-en="Sign in">Entrar</button>
+    <p class="forgot"><a href="#" id="forgot-link" data-en="Forgot your password?">¿Olvidaste tu contraseña?</a></p>
     <p class="msg" id="li-msg"></p>
   </form>
 
@@ -177,6 +180,17 @@
     <div><label data-en="Password (min. 8)">Contraseña (mín. 8)</label><input type="password" id="su-pass" required minlength="8" autocomplete="new-password" /></div>
     <button class="btn" type="submit" data-en="Create my card">Crear mi tarjeta</button>
     <p class="msg" id="su-msg"></p>
+  </form>
+</div>
+
+<!-- ====== set new password (from recovery email link) ====== -->
+<div class="wrap auth hide" id="view-reset">
+  <img class="seal" src="assets/lavarita-seal.png" alt="La Varita" />
+  <h1 data-en="New <em>password</em>.">Nueva <em>contraseña</em>.</h1>
+  <form id="form-reset" style="margin-top:26px;">
+    <div><label data-en="New password (min. 8)">Nueva contraseña (mín. 8)</label><input type="password" id="rs-pass" required minlength="8" autocomplete="new-password" /></div>
+    <button class="btn" type="submit" data-en="Save password">Guardar contraseña</button>
+    <p class="msg" id="rs-msg" role="status"></p>
   </form>
 </div>
 
@@ -268,7 +282,7 @@ langBtn.addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; lo
 const t = (es, en) => lang === 'en' ? en : es;
 
 /* ---------- views ---------- */
-const views = { loading: el('view-loading'), auth: el('view-auth'), home: el('view-home') };
+const views = { loading: el('view-loading'), auth: el('view-auth'), reset: el('view-reset'), home: el('view-home') };
 function el(id) { return document.getElementById(id); }
 function show(name) {
   Object.entries(views).forEach(([k, v]) => v.classList.toggle('hide', k !== name));
@@ -316,6 +330,45 @@ el('form-login').addEventListener('submit', async (e) => {
 });
 
 el('logout').addEventListener('click', () => db.auth.signOut());
+
+/* ---------- forgot password ---------- */
+let recovering = false;
+el('forgot-link').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const msg = el('li-msg'); msg.className = 'msg';
+  const email = el('li-email').value.trim();
+  if (!email) {
+    msg.className = 'msg err';
+    msg.textContent = t('Escribe tu correo arriba y toca el enlace otra vez.', 'Type your email above, then tap the link again.');
+    return;
+  }
+  msg.textContent = t('Enviando…', 'Sending…');
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  if (error) {
+    msg.className = 'msg err';
+    msg.textContent = t('No se pudo enviar — intenta de nuevo en un minuto.', 'Could not send — try again in a minute.');
+    return;
+  }
+  msg.className = 'msg ok';
+  msg.textContent = t('📬 Si ese correo tiene cuenta, te enviamos un enlace para restablecer tu contraseña.', '📬 If that email has an account, we sent you a reset link.');
+});
+
+el('form-reset').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = el('rs-msg'); msg.className = 'msg'; msg.textContent = t('Guardando…', 'Saving…');
+  const { error } = await db.auth.updateUser({ password: el('rs-pass').value });
+  if (error) {
+    msg.className = 'msg err';
+    msg.textContent = /weak|short/i.test(error.message)
+      ? t('La contraseña debe tener al menos 8 caracteres.', 'Password must be at least 8 characters.')
+      : t('No se pudo guardar — intenta de nuevo.', 'Could not save — try again.');
+    return;
+  }
+  recovering = false;
+  el('form-reset').reset();
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) loadHome(session.user);
+});
 
 /* ---------- Google sign-in ---------- */
 el('google-btn').addEventListener('click', async () => {
@@ -366,7 +419,7 @@ async function loadHome(user) {
         ${(s.body_es || s.body_en) ? `<div class="b">${esc(lang === 'en' ? (s.body_en || '') : (s.body_es || ''))}</div>` : ''}
       </div>`).join('');
   }
-  show('home');
+  if (!recovering) show('home');
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
@@ -453,7 +506,9 @@ el('fbform').addEventListener('submit', async (e) => {
 });
 
 /* ---------- session wiring ---------- */
-db.auth.onAuthStateChange((_event, session) => {
+db.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') { recovering = true; show('reset'); return; }
+  if (recovering) return; // stay on the new-password screen until saved
   if (session?.user) loadHome(session.user);
   else show('auth');
 });
