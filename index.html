@@ -132,6 +132,69 @@
   .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--hair);border-top-color:var(--clay);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;}
   @keyframes sp{to{transform:rotate(360deg);}}
   .loading{padding:80px 0;text-align:center;font-family:var(--mono);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);}
+
+  /* ---------- bottom tab bar ---------- */
+  .tabbar{position:fixed;bottom:0;left:0;right:0;z-index:90;background:var(--cream);border-top:1.5px solid var(--ink);display:flex;padding-bottom:env(safe-area-inset-bottom);}
+  .tabbar button{flex:1;background:none;border:none;padding:9px 4px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);cursor:pointer;}
+  .tabbar button .ico{font-size:1.15rem;line-height:1;}
+  .tabbar button.on{color:var(--clay);font-weight:700;}
+  body.tabbed{padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+
+  /* ---------- ordering ---------- */
+  .pagetitle{font-weight:300;font-size:1.75rem;letter-spacing:-.02em;margin:0 0 4px;}
+  .pagetitle em{font-style:italic;font-weight:500;color:var(--clay);}
+  .paynote{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--oxblood);margin-bottom:18px;}
+  .mcat{border-top:1.5px solid var(--ink);padding-top:12px;margin-top:18px;}
+  .mcat h3{font-weight:500;font-size:1.2rem;margin:0 0 6px;}
+  .mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:.55em 0;border-bottom:1px dotted var(--hair);}
+  .mrow .nm{font-size:1rem;line-height:1.3;}
+  .mrow .pr{font-family:var(--mono);font-size:.78rem;color:var(--ink-soft);white-space:nowrap;}
+  .stepper{display:flex;align-items:center;gap:8px;}
+  .stepper button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--clay);background:transparent;color:var(--clay);font-size:1rem;line-height:1;cursor:pointer;padding:0;}
+  .stepper button.add{background:var(--clay);color:var(--cream);}
+  .stepper .q{font-family:var(--mono);font-weight:700;min-width:18px;text-align:center;}
+  .cartbar{position:fixed;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));z-index:80;padding:0 20px;}
+  .cartbar .btn{box-shadow:0 10px 24px rgba(38,38,38,.3);}
+  .drawer{position:fixed;inset:0;z-index:200;background:rgba(38,38,38,.5);display:none;}
+  .drawer.open{display:block;}
+  .drawer .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--cream);border-radius:16px 16px 0 0;max-height:82dvh;overflow-y:auto;padding:20px 20px calc(20px + env(safe-area-inset-bottom));}
+  .sheet h3{font-weight:500;font-size:1.3rem;margin:0 0 12px;}
+  .cline{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:.5em 0;border-bottom:1px dotted var(--hair);}
+  .cline .nm{font-size:.98rem;}
+  .ctotal{display:flex;justify-content:space-between;font-weight:600;font-size:1.15rem;margin:14px 0 4px;}
+  .sheet textarea{min-height:54px;margin-top:10px;}
+  .sheet .btn{margin-top:12px;}
+  .closex{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.3rem;color:var(--ink-soft);cursor:pointer;}
+
+  /* ---------- orders (customer + staff) ---------- */
+  .ocard{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:14px 16px;margin-top:14px;}
+  .ocard .ohead{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .ocard .code{font-family:var(--mono);font-weight:700;font-size:1rem;}
+  .pill{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;padding:.4em .7em;border-radius:99px;border:1.5px solid var(--ink);}
+  .pill.received{background:var(--paper);}
+  .pill.accepted{background:var(--ember);border-color:var(--ember);color:var(--ink);}
+  .pill.ready{background:var(--olive);border-color:var(--olive);color:var(--cream);}
+  .pill.completed{background:var(--ink);color:var(--cream);}
+  .pill.cancelled{background:transparent;color:var(--ink-soft);border-color:var(--hair);}
+  .ocard .oitems{color:var(--ink-soft);font-size:.92rem;margin:8px 0 2px;line-height:1.5;}
+  .ocard .ofoot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap;}
+  .ocard .tot{font-family:var(--mono);font-weight:700;}
+  .ocard .meta{font-family:var(--mono);font-size:.62rem;color:var(--ink-soft);}
+  .obtns{display:flex;gap:8px;flex-wrap:wrap;}
+  .obtn{font-family:var(--mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;padding:.6em 1em;border-radius:5px;border:1.5px solid var(--ink);background:var(--ink);color:var(--cream);cursor:pointer;}
+  .obtn.ghost{background:transparent;color:var(--ink);}
+  .obtn.danger{background:transparent;border-color:var(--oxblood);color:var(--oxblood);}
+  .empty{font-family:var(--mono);font-size:.7rem;color:var(--ink-soft);letter-spacing:.06em;padding:24px 0;text-align:center;}
+
+  /* ---------- staff scanner ---------- */
+  .scanbox{background:var(--ink);border-radius:12px;padding:16px;margin-top:14px;color:var(--cream);}
+  .scanbox video{width:100%;border-radius:8px;background:#000;max-height:300px;object-fit:cover;}
+  .scanrow{display:flex;gap:8px;margin-top:10px;}
+  .scanrow input{flex:1;font-family:var(--mono);text-transform:uppercase;}
+  .member-result{background:var(--cream);color:var(--ink);border-radius:10px;padding:14px 16px;margin-top:12px;}
+  .member-result .nm{font-weight:600;font-size:1.15rem;}
+  .member-result .sub{font-family:var(--mono);font-size:.66rem;color:var(--ink-soft);letter-spacing:.08em;margin-top:2px;}
+  .secthead{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--oxblood);margin:26px 0 4px;}
 </style>
 </head>
 <body>
@@ -256,9 +319,64 @@
   <div class="foot">La Varita · Asado con tradición · Ponce, P.R.</div>
 </div>
 
+<!-- ====== order (menu + cart) ====== -->
+<div class="wrap home hide" id="view-order">
+  <h2 class="pagetitle" data-en="Order <em>to go</em>.">Ordena <em>para llevar</em>.</h2>
+  <div class="paynote" data-en="Pay at pickup · show your QR and earn your stamp">Pagas al recoger · muestra tu QR y gana tu sello</div>
+  <div id="menu-list"><div class="empty" data-en="Loading menu…">Cargando menú…</div></div>
+</div>
+<div class="cartbar hide" id="cartbar">
+  <button class="btn" id="cart-open"></button>
+</div>
+<div class="drawer" id="cart-drawer">
+  <div class="sheet">
+    <button class="closex" id="cart-close" aria-label="Cerrar">✕</button>
+    <h3 data-en="Your order">Tu orden</h3>
+    <div id="cart-lines"></div>
+    <div class="ctotal"><span>Total</span><span>$<span id="cart-sum">0.00</span></span></div>
+    <div class="paynote" data-en="You pay at the counter when you pick up">Pagas en caja al recoger</div>
+    <textarea id="cart-notes" placeholder="Notas para la cocina… (opcional)" data-en-ph="Notes for the kitchen… (optional)"></textarea>
+    <button class="btn" id="cart-place" data-en="Place order">Enviar orden</button>
+    <p class="msg" id="cart-msg" role="status"></p>
+  </div>
+</div>
+
+<!-- ====== my orders ====== -->
+<div class="wrap home hide" id="view-myorders">
+  <h2 class="pagetitle" data-en="Your <em>orders</em>.">Tus <em>órdenes</em>.</h2>
+  <div id="myorders-list"><div class="empty" data-en="No orders yet — hungry?">Aún no tienes órdenes — ¿hambre?</div></div>
+</div>
+
+<!-- ====== staff: kitchen ====== -->
+<div class="wrap home hide" id="view-staff">
+  <h2 class="pagetitle" data-en="The <em>kitchen</em>.">La <em>cocina</em>.</h2>
+
+  <div class="secthead" data-en="Scan member QR">Escanear QR de miembro</div>
+  <div class="scanbox">
+    <video id="scan-video" playsinline muted class="hide"></video>
+    <div class="scanrow">
+      <button class="obtn" id="scan-start" data-en="Start camera">Iniciar cámara</button>
+      <input type="text" id="scan-manual" placeholder="LV-0000" maxlength="8" />
+      <button class="obtn ghost" style="border-color:var(--cream);color:var(--cream);" id="scan-lookup" data-en="Find">Buscar</button>
+    </div>
+    <div id="member-box"></div>
+  </div>
+
+  <div class="secthead" data-en="Order queue">Cola de órdenes</div>
+  <div id="queue-list"><div class="empty" data-en="No active orders">Sin órdenes activas</div></div>
+</div>
+
+<nav class="tabbar hide" id="tabbar">
+  <button data-view="home" class="on"><span class="ico">🎟️</span><span data-en="Card">Tarjeta</span></button>
+  <button data-view="order"><span class="ico">🍗</span><span data-en="Order">Ordenar</span></button>
+  <button data-view="myorders"><span class="ico">🧾</span><span data-en="Orders">Órdenes</span></button>
+  <button data-view="staff" id="tab-staff" class="hide"><span class="ico">🔥</span><span data-en="Kitchen">Cocina</span></button>
+</nav>
+
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import QRCode from 'https://esm.sh/qrcode@1.5.4';
+import jsQR from 'https://esm.sh/jsqr@1.4.0';
 
 const SUPABASE_URL = 'https://wfltluwbiyowxriastwx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_9NDWk6F7yKav-70S36wYPQ_Ra1KX5-F';
@@ -282,11 +400,16 @@ langBtn.addEventListener('click', () => { lang = lang === 'es' ? 'en' : 'es'; lo
 const t = (es, en) => lang === 'en' ? en : es;
 
 /* ---------- views ---------- */
-const views = { loading: el('view-loading'), auth: el('view-auth'), reset: el('view-reset'), home: el('view-home') };
+const views = { loading: el('view-loading'), auth: el('view-auth'), reset: el('view-reset'), home: el('view-home'), order: el('view-order'), myorders: el('view-myorders'), staff: el('view-staff') };
 function el(id) { return document.getElementById(id); }
+let currentView = 'loading';
+const APP_VIEWS = ['home', 'order', 'myorders', 'staff'];
 function show(name) {
+  currentView = name;
   Object.entries(views).forEach(([k, v]) => v.classList.toggle('hide', k !== name));
-  el('logout').classList.toggle('hide', name !== 'home');
+  el('logout').classList.toggle('hide', !APP_VIEWS.includes(name));
+  document.querySelectorAll('#tabbar button').forEach(x => x.classList.toggle('on', x.dataset.view === name));
+  renderCartbar();
 }
 
 /* ---------- auth tabs ---------- */
@@ -386,6 +509,11 @@ async function loadHome(user) {
     db.from('specials').select('*').eq('published', true).order('created_at', { ascending: false }).limit(10)
   ]);
   if (!profile) { show('auth'); return; }
+
+  currentProfile = profile;
+  el('tabbar').classList.remove('hide');
+  document.body.classList.add('tabbed');
+  el('tab-staff').classList.toggle('hide', !(profile.role === 'staff' || profile.role === 'owner'));
 
   const first = (profile.name || '').split(' ')[0] || t('hola', 'hi');
   el('greet').innerHTML = t(`¡Hola, <em>${esc(first)}</em>!`, `Hi, <em>${esc(first)}</em>!`);
@@ -505,12 +633,297 @@ el('fbform').addEventListener('submit', async (e) => {
   msg.textContent = t('🔥 ¡Gracias! Tu opinión alimenta la candela.', '🔥 Thanks! Your feedback feeds the fire.');
 });
 
+/* ================== M3: ordering + kitchen ================== */
+let currentProfile = null;
+
+const STATUS = {
+  received:  ['Recibida', 'Received'],
+  accepted:  ['En preparación', 'In the kitchen'],
+  ready:     ['Lista para recoger', 'Ready for pickup'],
+  completed: ['Entregada', 'Picked up'],
+  cancelled: ['Cancelada', 'Cancelled']
+};
+const statusLabel = (s) => { const m = STATUS[s] || [s, s]; return lang === 'en' ? m[1] : m[0]; };
+const money = (n) => Number(n).toFixed(2);
+
+/* ----- tab navigation ----- */
+function goTab(v) {
+  show(v);
+  if (v === 'order') loadMenu();
+  if (v === 'myorders') loadMyOrders();
+  if (v === 'staff') loadQueue();
+}
+document.querySelectorAll('#tabbar button').forEach(b =>
+  b.addEventListener('click', () => goTab(b.dataset.view)));
+
+/* ----- menu + cart ----- */
+let menuData = null;
+let cart = {};
+try { cart = JSON.parse(localStorage.getItem('lv_cart') || '{}'); } catch (_e) { cart = {}; }
+const saveCart = () => localStorage.setItem('lv_cart', JSON.stringify(cart));
+const itemById = (id) => menuData ? menuData.items.find(i => i.id === id) : null;
+const iname = (it) => lang === 'en' ? it.name_en : it.name_es;
+const cartCount = () => Object.values(cart).reduce((a, b) => a + b, 0);
+function cartTotal() {
+  let s = 0;
+  for (const [id, q] of Object.entries(cart)) { const it = itemById(id); if (it) s += Number(it.price) * q; }
+  return s;
+}
+function setQty(id, q) {
+  if (q <= 0) delete cart[id]; else cart[id] = Math.min(q, 20);
+  saveCart(); renderMenu(); renderCartbar(); renderDrawer();
+}
+
+async function loadMenu(force = false) {
+  if (menuData && !force) { renderMenu(); renderCartbar(); return; }
+  const [{ data: cats }, { data: items }] = await Promise.all([
+    db.from('menu_categories').select('*').eq('active', true).order('sort'),
+    db.from('menu_items').select('*').eq('active', true).order('sort')
+  ]);
+  menuData = { cats: cats || [], items: items || [] };
+  Object.keys(cart).forEach(id => { if (!itemById(id)) delete cart[id]; });
+  saveCart(); renderMenu(); renderCartbar();
+}
+
+function stepperHtml(it) {
+  const q = cart[it.id] || 0;
+  if (!q) return `<div class="stepper"><button class="add" data-add="${it.id}" aria-label="Añadir">+</button></div>`;
+  return `<div class="stepper"><button data-dec="${it.id}">−</button><span class="q">${q}</span><button class="add" data-inc="${it.id}">+</button></div>`;
+}
+function renderMenu() {
+  if (!menuData) return;
+  const box = el('menu-list');
+  box.innerHTML = menuData.cats.map(c => {
+    const items = menuData.items.filter(i => i.category_id === c.id);
+    if (!items.length) return '';
+    return `<div class="mcat"><h3>${esc(lang === 'en' ? c.name_en : c.name_es)}</h3>` +
+      items.map(it => `<div class="mrow"><div><div class="nm">${esc(iname(it))}</div><div class="pr">$${money(it.price)}</div></div>${stepperHtml(it)}</div>`).join('') +
+      `</div>`;
+  }).join('');
+}
+el('menu-list').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.add) setQty(b.dataset.add, 1);
+  if (b.dataset.inc) setQty(b.dataset.inc, (cart[b.dataset.inc] || 0) + 1);
+  if (b.dataset.dec) setQty(b.dataset.dec, (cart[b.dataset.dec] || 0) - 1);
+});
+
+function renderCartbar() {
+  const n = cartCount();
+  const showBar = currentView === 'order' && n > 0;
+  el('cartbar').classList.toggle('hide', !showBar);
+  if (showBar) el('cart-open').textContent =
+    `${t('Ver orden', 'View order')} · ${n} · $${money(cartTotal())}`;
+}
+function renderDrawer() {
+  if (!el('cart-drawer').classList.contains('open')) return;
+  const lines = el('cart-lines');
+  const entries = Object.entries(cart).map(([id, q]) => ({ it: itemById(id), q })).filter(x => x.it);
+  if (!entries.length) { el('cart-drawer').classList.remove('open'); return; }
+  lines.innerHTML = entries.map(({ it, q }) =>
+    `<div class="cline"><div class="nm">${esc(iname(it))}<div class="pr">$${money(it.price)}</div></div>${stepperHtml(it)}</div>`).join('');
+  el('cart-sum').textContent = money(cartTotal());
+}
+el('cart-lines').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.add) setQty(b.dataset.add, 1);
+  if (b.dataset.inc) setQty(b.dataset.inc, (cart[b.dataset.inc] || 0) + 1);
+  if (b.dataset.dec) setQty(b.dataset.dec, (cart[b.dataset.dec] || 0) - 1);
+});
+el('cart-open').addEventListener('click', () => { el('cart-drawer').classList.add('open'); renderDrawer(); });
+el('cart-close').addEventListener('click', () => el('cart-drawer').classList.remove('open'));
+el('cart-drawer').addEventListener('click', (e) => { if (e.target === el('cart-drawer')) el('cart-drawer').classList.remove('open'); });
+
+el('cart-place').addEventListener('click', async () => {
+  const msg = el('cart-msg'); msg.className = 'msg';
+  const items = Object.entries(cart).map(([item_id, qty]) => ({ item_id, qty }));
+  if (!items.length) return;
+  msg.textContent = t('Enviando…', 'Sending…');
+  const { data, error } = await db.rpc('place_order', {
+    p_items: items, p_notes: el('cart-notes').value.trim() || null
+  });
+  if (error || !data?.ok) {
+    msg.className = 'msg err';
+    msg.textContent = data?.error === 'too_many_open_orders'
+      ? t('Ya tienes 3 órdenes activas — espera a que se completen.', 'You already have 3 active orders — wait for them to finish.')
+      : t('No se pudo enviar — intenta de nuevo.', 'Could not send — try again.');
+    return;
+  }
+  cart = {}; saveCart(); el('cart-notes').value = '';
+  el('cart-drawer').classList.remove('open');
+  goTab('myorders');
+});
+
+/* ----- my orders ----- */
+async function loadMyOrders() {
+  if (!currentProfile) return;
+  const { data: orders } = await db.from('orders')
+    .select('*, order_items(name_es, qty, line_total)')
+    .eq('customer_id', currentProfile.id)
+    .order('created_at', { ascending: false }).limit(12);
+  const box = el('myorders-list');
+  if (!orders || !orders.length) {
+    box.innerHTML = `<div class="empty">${t('Aún no tienes órdenes — ¿hambre?', 'No orders yet — hungry?')}</div>`;
+    return;
+  }
+  box.innerHTML = orders.map(o => `
+    <div class="ocard">
+      <div class="ohead"><span class="code">${esc(o.order_code)}</span><span class="pill ${o.status}">${statusLabel(o.status)}</span></div>
+      <div class="oitems">${o.order_items.map(i => `${i.qty}× ${esc(i.name_es)}`).join(' · ')}</div>
+      <div class="ofoot">
+        <span class="tot">$${money(o.total)}</span>
+        ${o.status === 'received' ? `<button class="obtn danger" data-cancel="${o.id}">${t('Cancelar', 'Cancel')}</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+el('myorders-list').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-cancel]'); if (!b) return;
+  b.disabled = true;
+  await db.rpc('cancel_my_order', { p_order_id: b.dataset.cancel });
+  loadMyOrders();
+});
+
+/* ----- staff: order queue ----- */
+async function loadQueue() {
+  if (!currentProfile || (currentProfile.role !== 'staff' && currentProfile.role !== 'owner')) return;
+  const { data: orders } = await db.from('orders')
+    .select('*, order_items(name_es, qty), customer:profiles!orders_customer_id_fkey(name, member_code)')
+    .in('status', ['received', 'accepted', 'ready'])
+    .order('created_at');
+  const box = el('queue-list');
+  if (!orders || !orders.length) {
+    box.innerHTML = `<div class="empty">${t('Sin órdenes activas', 'No active orders')}</div>`;
+    return;
+  }
+  const NEXT = { received: ['accepted', ['Aceptar', 'Accept']], accepted: ['ready', ['Lista', 'Ready']], ready: ['completed', ['Entregada', 'Picked up']] };
+  box.innerHTML = orders.map(o => {
+    const mins = Math.max(0, Math.round((Date.now() - new Date(o.created_at).getTime()) / 60000));
+    const nx = NEXT[o.status];
+    return `<div class="ocard">
+      <div class="ohead"><span class="code">${esc(o.order_code)}</span><span class="pill ${o.status}">${statusLabel(o.status)}</span></div>
+      <div class="meta">${esc(o.customer?.name || '')} · ${esc(o.customer?.member_code || '')} · ${mins} min</div>
+      <div class="oitems">${o.order_items.map(i => `<strong>${i.qty}×</strong> ${esc(i.name_es)}`).join('<br/>')}</div>
+      ${o.notes ? `<div class="meta">📝 ${esc(o.notes)}</div>` : ''}
+      <div class="ofoot">
+        <span class="tot">$${money(o.total)}</span>
+        <span class="obtns">
+          <button class="obtn" data-status="${nx[0]}" data-order="${o.id}">${lang === 'en' ? nx[1][1] : nx[1][0]}</button>
+          <button class="obtn danger" data-status="cancelled" data-order="${o.id}">✕</button>
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+el('queue-list').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-order]'); if (!b) return;
+  if (b.dataset.status === 'cancelled' && !confirm(t('¿Cancelar esta orden?', 'Cancel this order?'))) return;
+  b.disabled = true;
+  await db.rpc('order_set_status', { p_order_id: b.dataset.order, p_status: b.dataset.status });
+  loadQueue();
+});
+
+/* ----- staff: member QR scanner ----- */
+let scanStream = null, scanRAF = null, currentMemberCode = null;
+function stopScan() {
+  if (scanRAF) cancelAnimationFrame(scanRAF); scanRAF = null;
+  if (scanStream) { scanStream.getTracks().forEach(tr => tr.stop()); scanStream = null; }
+  el('scan-video').classList.add('hide');
+  el('scan-start').textContent = t('Iniciar cámara', 'Start camera');
+}
+el('scan-start').addEventListener('click', async () => {
+  if (scanStream) { stopScan(); return; }
+  const video = el('scan-video');
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+  } catch (_e) {
+    el('member-box').innerHTML = `<div class="member-result"><div class="sub">${t('No se pudo abrir la cámara — escribe el código manual.', 'Could not open the camera — type the code manually.')}</div></div>`;
+    return;
+  }
+  video.srcObject = scanStream; video.classList.remove('hide'); await video.play();
+  el('scan-start').textContent = t('Detener', 'Stop');
+  const cv = document.createElement('canvas');
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  const tick = () => {
+    if (!scanStream) return;
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      cv.width = video.videoWidth; cv.height = video.videoHeight;
+      cx.drawImage(video, 0, 0);
+      const img = cx.getImageData(0, 0, cv.width, cv.height);
+      const code = jsQR(img.data, img.width, img.height);
+      if (code && /^LV-\d{3,6}$/i.test(code.data.trim())) {
+        stopScan();
+        lookupMember(code.data.trim().toUpperCase());
+        return;
+      }
+    }
+    scanRAF = requestAnimationFrame(tick);
+  };
+  scanRAF = requestAnimationFrame(tick);
+});
+el('scan-lookup').addEventListener('click', () => {
+  let v = el('scan-manual').value.trim().toUpperCase();
+  if (/^\d{1,6}$/.test(v)) v = 'LV-' + v.padStart(4, '0');
+  if (!v) return;
+  lookupMember(v);
+});
+
+async function lookupMember(code) {
+  currentMemberCode = code;
+  const box = el('member-box');
+  box.innerHTML = `<div class="member-result"><div class="sub">…</div></div>`;
+  const { data: p } = await db.from('profiles')
+    .select('id, name, member_code, founding_member')
+    .eq('member_code', code).maybeSingle();
+  if (!p) {
+    box.innerHTML = `<div class="member-result"><div class="nm">${t('No encontrado', 'Not found')}</div><div class="sub">${esc(code)}</div></div>`;
+    return;
+  }
+  const { data: cards } = await db.from('punch_cards')
+    .select('punches, redeemed_at').eq('customer_id', p.id).is('redeemed_at', null);
+  const active = (cards || []).find(c => c.punches < 9) || { punches: 0 };
+  const rewardReady = (cards || []).some(c => c.punches >= 9);
+  box.innerHTML = `<div class="member-result">
+    <div class="nm">${esc(p.name)} ${p.founding_member ? '✶' : ''}</div>
+    <div class="sub">${esc(p.member_code)} · ${active.punches}/9 ${t('sellos', 'stamps')}${rewardReady ? ' · 🔥 ' + t('PLATO GRATIS DISPONIBLE', 'FREE PLATE AVAILABLE') : ''}</div>
+    <div class="obtns" style="margin-top:10px;">
+      <button class="obtn" data-maction="punch">+1 ${t('Sello', 'Stamp')}</button>
+      ${rewardReady ? `<button class="obtn" style="background:var(--oxblood);border-color:var(--oxblood);" data-maction="redeem">${t('Canjear gratis', 'Redeem free')}</button>` : ''}
+    </div>
+    <p class="msg" id="member-msg" style="text-align:left;margin:8px 0 0;"></p>
+  </div>`;
+}
+el('member-box').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-maction]'); if (!b || !currentMemberCode) return;
+  b.disabled = true;
+  const fn = b.dataset.maction === 'punch' ? 'award_punch' : 'redeem_reward';
+  const { data, error } = await db.rpc(fn, { p_member_code: currentMemberCode });
+  if (error || !data?.ok) {
+    const mm = el('member-msg');
+    if (mm) { mm.className = 'msg err'; mm.textContent = t('No se pudo — intenta de nuevo.', 'Failed — try again.'); }
+    b.disabled = false;
+    return;
+  }
+  lookupMember(currentMemberCode);
+});
+
+/* ----- light polling while looking at live lists ----- */
+setInterval(() => {
+  if (document.visibilityState !== 'visible' || !currentProfile) return;
+  if (currentView === 'myorders') loadMyOrders();
+  if (currentView === 'staff') loadQueue();
+}, 15000);
+
 /* ---------- session wiring ---------- */
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') { recovering = true; show('reset'); return; }
   if (recovering) return; // stay on the new-password screen until saved
   if (session?.user) loadHome(session.user);
-  else show('auth');
+  else {
+    currentProfile = null;
+    el('tabbar').classList.add('hide');
+    document.body.classList.remove('tabbed');
+    show('auth');
+  }
 });
 
 // refresh card when returning to the app (e.g., right after a staff scan)
