@@ -755,10 +755,12 @@ function openOptions(id) {
   optItem = it;
   el('opt-title').textContent = iname(it) + ' · $' + money(it.price);
   el('opt-groups').innerHTML = it.options.groups.map((g, i) => {
-    const choices = menuData.items.filter(x => {
-      const cat = menuData.cats.find(c => c.id === x.category_id);
-      return cat && cat.slug === g.from_category;
-    });
+    const choices = g.choices
+      ? g.choices.map(nm => ({ name_es: nm, name_en: nm }))
+      : menuData.items.filter(x => {
+          const cat = menuData.cats.find(c => c.id === x.category_id);
+          return cat && cat.slug === g.from_category;
+        });
     return `<div class="optlabel">${esc(lang === 'en' ? g.label_en : g.label_es)}</div>
       <select data-g="${i}">${choices.map(ch => `<option value="${esc(ch.name_es)}">${esc(iname(ch))}</option>`).join('')}</select>`;
   }).join('');
