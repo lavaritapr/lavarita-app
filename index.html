@@ -218,6 +218,9 @@
   .fbphoto{max-width:100%;border-radius:8px;margin-top:8px;border:1.5px solid var(--ink);display:block;}
   .admform input,.admform textarea{margin-bottom:8px;}
   .okflash{color:var(--olive);font-family:var(--mono);font-size:.7rem;}
+  .rolesel{font-family:var(--mono);font-size:.7rem;padding:.35em .4em;border:1.5px solid var(--hair);border-radius:5px;background:var(--paper);color:var(--ink);}
+  .spr{font-family:var(--mono);font-weight:700;font-size:.8rem;color:var(--oxblood);white-space:nowrap;margin-left:.5em;}
+  .admform select{width:100%;font-family:var(--serif);font-size:1rem;padding:.65em .8em;border:1.5px solid var(--hair);border-radius:6px;background:var(--paper);color:var(--ink);margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -597,7 +600,7 @@ async function loadHome(user) {
   if (specials && specials.length) {
     list.innerHTML = specials.map(s => `
       <div class="special">
-        <div class="t">${esc(lang === 'en' ? s.title_en : s.title_es)}</div>
+        <div class="t">${esc(lang === 'en' ? s.title_en : s.title_es)}${s.price ? `<span class="spr">$${Number(s.price).toFixed(2)}</span>` : ''}</div>
         ${(s.body_es || s.body_en) ? `<div class="b">${esc(lang === 'en' ? (s.body_en || '') : (s.body_es || ''))}</div>` : ''}
       </div>`).join('');
   }
@@ -1066,12 +1069,24 @@ async function admResumen() {
 
 async function admClientes() {
   const { data: rows } = await db.from('profiles')
-    .select('member_code, name, email, municipio, founding_member, role, created_at')
+    .select('id, member_code, name, email, municipio, founding_member, role, created_at')
     .order('created_at', { ascending: false }).limit(300);
   const render = (list) => list.map(p => `
-    <div class="arow"><div class="who">${esc(p.name || '—')} ${p.founding_member ? '✶' : ''} ${p.role !== 'customer' ? `<span class="pill received">${esc(p.role)}</span>` : ''}
-    <span class="sub">${esc(p.member_code)} · ${esc(p.email || '')} · ${esc(p.municipio || '—')}</span></div></div>`).join('');
+    <div class="arow"><div class="who">${esc(p.name || '—')} ${p.founding_member ? '✶' : ''}
+    <span class="sub">${esc(p.member_code)} · ${esc(p.email || '')} · ${esc(p.municipio || '—')}</span></div>
+    ${p.id === currentProfile.id
+      ? `<span class="pill completed">${t('tú · owner', 'you · owner')}</span>`
+      : `<span style="display:flex;align-items:center;gap:6px;">
+          <select class="rolesel" data-roleid="${p.id}">
+            <option value="customer" ${p.role === 'customer' ? 'selected' : ''}>${t('cliente', 'customer')}</option>
+            <option value="staff" ${p.role === 'staff' ? 'selected' : ''}>staff</option>
+            <option value="owner" ${p.role === 'owner' ? 'selected' : ''}>owner</option>
+          </select>
+          <button class="obtn ghost" data-saverole="${p.id}">💾</button>
+        </span>`}
+    </div>`).join('');
   el('adm-body').innerHTML = `<input class="searchbox" id="cli-q" placeholder="${t('Buscar nombre, correo, código…', 'Search name, email, code…')}" />
+    <div class="paynote">${t('staff = ve la Cocina · owner = Cocina + Admin', 'staff = sees the Kitchen · owner = Kitchen + Admin')}</div>
     <div id="cli-list">${rows && rows.length ? render(rows) : `<div class="empty">—</div>`}</div>`;
   el('cli-q').addEventListener('input', () => {
     const q = el('cli-q').value.toLowerCase();
@@ -1137,7 +1152,27 @@ el('adm-body').addEventListener('click', async (e) => {
     admEspeciales();
     return;
   }
+  const sr = e.target.closest('button[data-saverole]');
+  if (sr) {
+    const sel = el('adm-body').querySelector(`select[data-roleid="${sr.dataset.saverole}"]`);
+    sr.disabled = true;
+    const { data, error } = await db.rpc('set_member_role', { p_profile_id: sr.dataset.saverole, p_role: sel.value });
+    sr.disabled = false;
+    sr.innerHTML = (error || !data?.ok) ? '✕' : '<span class="okflash">✓</span>';
+    setTimeout(() => { sr.textContent = '💾'; }, 1800);
+    return;
+  }
 });
+
+/* free machine translation (MyMemory) with safe fallback to the original text */
+async function mt(text, from, to) {
+  try {
+    const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`);
+    const j = await r.json();
+    const out = j?.responseData?.translatedText;
+    return (out && typeof out === 'string' && out.trim()) ? out.trim() : text;
+  } catch (_e) { return text; }
+}
 
 async function admMenu() {
   const [{ data: cats }, { data: items }] = await Promise.all([
@@ -1165,29 +1200,42 @@ async function admEspeciales() {
   const { data: rows } = await db.from('specials').select('*').order('created_at', { ascending: false });
   el('adm-body').innerHTML = `
     <div class="admform">
-      <label>${t('Título (ES)', 'Title (ES)')}</label><input id="sp-tes" />
-      <label>${t('Título (EN)', 'Title (EN)')}</label><input id="sp-ten" />
-      <label>${t('Detalle (ES, opcional)', 'Body (ES, optional)')}</label><textarea id="sp-bes"></textarea>
-      <label>${t('Detalle (EN, opcional)', 'Body (EN, optional)')}</label><textarea id="sp-ben"></textarea>
+      <div class="paynote">${t('Escríbelo en UN idioma — lo traducimos al otro automáticamente', 'Write it in ONE language — we translate it automatically')}</div>
+      <label>${t('Idioma en que escribes', 'Language you are writing in')}</label>
+      <select id="sp-lang"><option value="es" ${lang === 'es' ? 'selected' : ''}>Español</option><option value="en" ${lang === 'en' ? 'selected' : ''}>English</option></select>
+      <label>${t('Título', 'Title')}</label><input id="sp-t" placeholder="${t('Ej: Jueves de Costillas', 'E.g.: Ribs Thursday')}" />
+      <label>${t('Detalle (opcional)', 'Body (optional)')}</label><textarea id="sp-b"></textarea>
+      <label>${t('Precio (opcional)', 'Price (optional)')}</label><input id="sp-p" type="number" step="0.05" min="0" placeholder="0.00" />
       <button class="btn" id="sp-add">${t('Publicar especial', 'Publish special')}</button>
-      <p class="msg" id="sp-msg"></p>
+      <p class="msg" id="sp-msg" role="status"></p>
     </div>
     <div class="secthead">${t('Publicados y anteriores', 'Published & past')}</div>
     ${(rows || []).map(s => `
-      <div class="arow"><div class="who">${esc(s.title_es)}<span class="sub">${esc(s.title_en)} · ${new Date(s.created_at).toLocaleDateString('es-PR')}</span></div>
+      <div class="arow"><div class="who">${esc(s.title_es)}${s.price ? `<span class="spr">$${Number(s.price).toFixed(2)}</span>` : ''}<span class="sub">${esc(s.title_en)} · ${new Date(s.created_at).toLocaleDateString('es-PR')}</span></div>
         <span class="obtns">
           <button class="obtn ${s.published ? 'ghost' : ''}" data-pub="${s.published ? 'off' : 'on'}" data-id="${s.id}">${s.published ? t('Ocultar', 'Hide') : t('Publicar', 'Publish')}</button>
           <button class="obtn danger" data-delspec="${s.id}">🗑</button>
         </span></div>`).join('') || `<div class="empty">—</div>`}`;
   el('sp-add').addEventListener('click', async () => {
-    const tes = el('sp-tes').value.trim(), ten = el('sp-ten').value.trim();
     const msg = el('sp-msg'); msg.className = 'msg';
-    if (!tes || !ten) { msg.className = 'msg err'; msg.textContent = t('Pon el título en ambos idiomas.', 'Add the title in both languages.'); return; }
+    const src = el('sp-lang').value, dst = src === 'es' ? 'en' : 'es';
+    const ti = el('sp-t').value.trim();
+    const bo = el('sp-b').value.trim();
+    const pr = parseFloat(el('sp-p').value);
+    if (!ti) { msg.className = 'msg err'; msg.textContent = t('Escribe el título.', 'Write the title.'); return; }
+    el('sp-add').disabled = true;
+    msg.textContent = t('Traduciendo y publicando…', 'Translating and publishing…');
+    const tT = await mt(ti, src, dst);
+    const tB = bo ? await mt(bo, src, dst) : null;
     const { error } = await db.from('specials').insert({
-      title_es: tes, title_en: ten,
-      body_es: el('sp-bes').value.trim() || null, body_en: el('sp-ben').value.trim() || null,
+      title_es: src === 'es' ? ti : tT,
+      title_en: src === 'en' ? ti : tT,
+      body_es: src === 'es' ? (bo || null) : tB,
+      body_en: src === 'en' ? (bo || null) : tB,
+      price: isNaN(pr) ? null : pr,
       published: true
     });
+    el('sp-add').disabled = false;
     if (error) { msg.className = 'msg err'; msg.textContent = t('No se pudo publicar.', 'Could not publish.'); return; }
     admEspeciales();
   });
