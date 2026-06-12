@@ -198,6 +198,26 @@
   .member-result .nm{font-weight:600;font-size:1.15rem;}
   .member-result .sub{font-family:var(--mono);font-size:.66rem;color:var(--ink-soft);letter-spacing:.08em;margin-top:2px;}
   .secthead{font-family:var(--mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--oxblood);margin:26px 0 4px;}
+
+  /* ---------- owner admin ---------- */
+  .subnav{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px;}
+  .subnav button{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.55em .9em;border-radius:99px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;}
+  .subnav button.on{background:var(--ink);color:var(--cream);}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .stat{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:12px;}
+  .stat .v{font-size:1.5rem;font-weight:600;}
+  .stat .l{font-family:var(--mono);font-size:.54rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);}
+  .arow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:.6em 0;border-bottom:1px dotted var(--hair);font-size:.95rem;flex-wrap:wrap;}
+  .arow .who{flex:1;min-width:160px;}
+  .arow .sub{font-family:var(--mono);font-size:.6rem;color:var(--ink-soft);display:block;margin-top:2px;}
+  .searchbox{width:100%;margin:4px 0 10px;}
+  .pricein{width:80px;font-family:var(--mono);font-size:.85rem;padding:.45em .5em;border:1.5px solid var(--hair);border-radius:5px;background:var(--paper);color:var(--ink);}
+  .chk{width:18px;height:18px;accent-color:var(--clay);}
+  .fbcardA{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:12px 14px;margin-top:12px;}
+  .sline{color:var(--clay);letter-spacing:2px;}
+  .fbphoto{max-width:100%;border-radius:8px;margin-top:8px;border:1.5px solid var(--ink);display:block;}
+  .admform input,.admform textarea{margin-bottom:8px;}
+  .okflash{color:var(--olive);font-family:var(--mono);font-size:.7rem;}
 </style>
 </head>
 <body>
@@ -377,11 +397,25 @@
   <div id="queue-list"><div class="empty" data-en="No active orders">Sin órdenes activas</div></div>
 </div>
 
+<!-- ====== owner admin ====== -->
+<div class="wrap home hide" id="view-admin">
+  <h2 class="pagetitle" data-en="Owner <em>panel</em>.">Panel del <em>dueño</em>.</h2>
+  <div class="subnav" id="adm-nav">
+    <button data-sec="resumen" class="on" data-en="Summary">Resumen</button>
+    <button data-sec="clientes" data-en="Customers">Clientes</button>
+    <button data-sec="opiniones" data-en="Feedback">Opiniones</button>
+    <button data-sec="menu" data-en="Menu">Menú</button>
+    <button data-sec="especiales" data-en="Specials">Especiales</button>
+  </div>
+  <div id="adm-body"><div class="empty">…</div></div>
+</div>
+
 <nav class="tabbar hide" id="tabbar">
   <button data-view="home" class="on"><span class="ico">🎟️</span><span data-en="Card">Tarjeta</span></button>
   <button data-view="order"><span class="ico">🍗</span><span data-en="Order">Ordenar</span></button>
   <button data-view="myorders"><span class="ico">🧾</span><span data-en="Orders">Órdenes</span></button>
   <button data-view="staff" id="tab-staff" class="hide"><span class="ico">🔥</span><span data-en="Kitchen">Cocina</span></button>
+  <button data-view="admin" id="tab-admin" class="hide"><span class="ico">📊</span><span>Admin</span></button>
 </nav>
 
 <script type="module">
@@ -419,10 +453,10 @@ langBtn.addEventListener('click', () => {
 const t = (es, en) => lang === 'en' ? en : es;
 
 /* ---------- views ---------- */
-const views = { loading: el('view-loading'), auth: el('view-auth'), reset: el('view-reset'), home: el('view-home'), order: el('view-order'), myorders: el('view-myorders'), staff: el('view-staff') };
+const views = { loading: el('view-loading'), auth: el('view-auth'), reset: el('view-reset'), home: el('view-home'), order: el('view-order'), myorders: el('view-myorders'), staff: el('view-staff'), admin: el('view-admin') };
 function el(id) { return document.getElementById(id); }
 let currentView = 'loading';
-const APP_VIEWS = ['home', 'order', 'myorders', 'staff'];
+const APP_VIEWS = ['home', 'order', 'myorders', 'staff', 'admin'];
 function show(name) {
   currentView = name;
   Object.entries(views).forEach(([k, v]) => v.classList.toggle('hide', k !== name));
@@ -533,6 +567,7 @@ async function loadHome(user) {
   el('tabbar').classList.remove('hide');
   document.body.classList.add('tabbed');
   el('tab-staff').classList.toggle('hide', !(profile.role === 'staff' || profile.role === 'owner'));
+  el('tab-admin').classList.toggle('hide', profile.role !== 'owner');
 
   const first = (profile.name || '').split(' ')[0] || t('hola', 'hi');
   el('greet').innerHTML = t(`¡Hola, <em>${esc(first)}</em>!`, `Hi, <em>${esc(first)}</em>!`);
@@ -671,6 +706,7 @@ function goTab(v) {
   if (v === 'order') loadMenu();
   if (v === 'myorders') loadMyOrders();
   if (v === 'staff') loadQueue();
+  if (v === 'admin') loadAdmin();
 }
 document.querySelectorAll('#tabbar button').forEach(b =>
   b.addEventListener('click', () => goTab(b.dataset.view)));
@@ -972,6 +1008,190 @@ el('member-box').addEventListener('click', async (e) => {
   }
   lookupMember(currentMemberCode);
 });
+
+/* ----- owner admin panel ----- */
+let admSec = 'resumen';
+el('adm-nav').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-sec]'); if (!b) return;
+  admSec = b.dataset.sec;
+  [...el('adm-nav').children].forEach(x => x.classList.toggle('on', x === b));
+  loadAdmin();
+});
+async function loadAdmin() {
+  if (!currentProfile || currentProfile.role !== 'owner') return;
+  el('adm-body').innerHTML = `<div class="empty">…</div>`;
+  if (admSec === 'resumen') return admResumen();
+  if (admSec === 'clientes') return admClientes();
+  if (admSec === 'opiniones') return admOpiniones();
+  if (admSec === 'menu') return admMenu();
+  if (admSec === 'especiales') return admEspeciales();
+}
+const avg = (arr) => { const v = arr.filter(x => x != null); return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : '—'; };
+
+async function admResumen() {
+  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [{ data: profs }, { data: ords }, { data: items }, { data: fb }, { count: scans }] = await Promise.all([
+    db.from('profiles').select('founding_member, municipio, created_at, role'),
+    db.from('orders').select('status, total, created_at').gte('created_at', since),
+    db.from('order_items').select('name_es, qty, line_total, orders!inner(status, created_at)').eq('orders.status', 'completed').gte('orders.created_at', since),
+    db.from('feedback').select('rating_food, rating_service, rating_speed, rating_price').gte('created_at', since),
+    db.from('punches').select('*', { count: 'exact', head: true }).gte('created_at', since)
+  ]);
+  const P = profs || [], O = ords || [], F = fb || [];
+  const completed = O.filter(o => o.status === 'completed');
+  const revenue = completed.reduce((a, o) => a + Number(o.total), 0);
+  const newM = P.filter(p => p.created_at > since).length;
+  const tops = {};
+  (items || []).forEach(i => { tops[i.name_es] = (tops[i.name_es] || 0) + i.qty; });
+  const topList = Object.entries(tops).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const muni = {};
+  P.forEach(p => { if (p.municipio) muni[p.municipio] = (muni[p.municipio] || 0) + 1; });
+  const muniList = Object.entries(muni).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  el('adm-body').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="v">${P.length}</div><div class="l">${t('Miembros', 'Members')}</div></div>
+      <div class="stat"><div class="v">${newM}</div><div class="l">${t('Nuevos (7d)', 'New (7d)')}</div></div>
+      <div class="stat"><div class="v">${P.filter(p => p.founding_member).length}</div><div class="l">${t('Fundadores', 'Founders')}</div></div>
+      <div class="stat"><div class="v">${scans ?? 0}</div><div class="l">${t('Sellos (7d)', 'Stamps (7d)')}</div></div>
+      <div class="stat"><div class="v">${O.length}</div><div class="l">${t('Órdenes (7d)', 'Orders (7d)')}</div></div>
+      <div class="stat"><div class="v">$${revenue.toFixed(2)}</div><div class="l">${t('Ventas completadas (7d)', 'Completed sales (7d)')}</div></div>
+      <div class="stat"><div class="v">${avg(F.map(f => f.rating_food))}</div><div class="l">${t('Comida ★ (7d)', 'Food ★ (7d)')}</div></div>
+      <div class="stat"><div class="v">${avg(F.map(f => f.rating_price))}</div><div class="l">${t('Precio ★ (7d)', 'Price ★ (7d)')}</div></div>
+    </div>
+    <div class="secthead">${t('Lo más vendido (7d)', 'Top sellers (7d)')}</div>
+    ${topList.length ? topList.map(([n, q]) => `<div class="arow"><span>${esc(n)}</span><strong>${q}</strong></div>`).join('') : `<div class="empty">${t('Sin ventas aún', 'No sales yet')}</div>`}
+    <div class="secthead">${t('Top municipios', 'Top municipalities')}</div>
+    ${muniList.length ? muniList.map(([n, q]) => `<div class="arow"><span>${esc(n)}</span><strong>${q}</strong></div>`).join('') : `<div class="empty">—</div>`}`;
+}
+
+async function admClientes() {
+  const { data: rows } = await db.from('profiles')
+    .select('member_code, name, email, municipio, founding_member, role, created_at')
+    .order('created_at', { ascending: false }).limit(300);
+  const render = (list) => list.map(p => `
+    <div class="arow"><div class="who">${esc(p.name || '—')} ${p.founding_member ? '✶' : ''} ${p.role !== 'customer' ? `<span class="pill received">${esc(p.role)}</span>` : ''}
+    <span class="sub">${esc(p.member_code)} · ${esc(p.email || '')} · ${esc(p.municipio || '—')}</span></div></div>`).join('');
+  el('adm-body').innerHTML = `<input class="searchbox" id="cli-q" placeholder="${t('Buscar nombre, correo, código…', 'Search name, email, code…')}" />
+    <div id="cli-list">${rows && rows.length ? render(rows) : `<div class="empty">—</div>`}</div>`;
+  el('cli-q').addEventListener('input', () => {
+    const q = el('cli-q').value.toLowerCase();
+    el('cli-list').innerHTML = render((rows || []).filter(p =>
+      (p.name || '').toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q) || (p.member_code || '').toLowerCase().includes(q)));
+  });
+}
+
+async function admOpiniones() {
+  const { data: rows } = await db.from('feedback')
+    .select('*, profiles(name, member_code)')
+    .order('created_at', { ascending: false }).limit(50);
+  if (!rows || !rows.length) { el('adm-body').innerHTML = `<div class="empty">${t('Aún no hay opiniones', 'No feedback yet')}</div>`; return; }
+  const stars = (n) => n ? '✶'.repeat(n) + '<span style="opacity:.25">' + '✶'.repeat(5 - n) + '</span>' : '—';
+  el('adm-body').innerHTML = rows.map(f => `
+    <div class="fbcardA">
+      <div class="arow" style="border:none;padding:0;"><strong>${esc(f.profiles?.name || '—')}</strong>
+        <span class="sub">${new Date(f.created_at).toLocaleDateString('es-PR')}</span></div>
+      <div class="sub" style="font-family:var(--mono);font-size:.6rem;color:var(--ink-soft);">
+        ${t('Comida', 'Food')} <span class="sline">${stars(f.rating_food)}</span> ·
+        ${t('Servicio', 'Service')} <span class="sline">${stars(f.rating_service)}</span> ·
+        ${t('Rapidez', 'Speed')} <span class="sline">${stars(f.rating_speed)}</span> ·
+        ${t('Precio', 'Price')} <span class="sline">${stars(f.rating_price)}</span></div>
+      ${f.comment ? `<div style="margin-top:6px;">${esc(f.comment)}</div>` : ''}
+      ${f.photo_path ? `<button class="obtn ghost" style="margin-top:8px;" data-photo="${esc(f.photo_path)}">📷 ${t('Ver foto', 'View photo')}</button><div class="photobox"></div>` : ''}
+    </div>`).join('');
+}
+el('adm-body').addEventListener('click', async (e) => {
+  const pb = e.target.closest('button[data-photo]');
+  if (pb) {
+    pb.disabled = true;
+    const { data } = await db.storage.from('plates').createSignedUrl(pb.dataset.photo, 3600);
+    if (data?.signedUrl) pb.nextElementSibling.innerHTML = `<img class="fbphoto" src="${data.signedUrl}" alt="Foto del plato" />`;
+    pb.remove();
+    return;
+  }
+  const sv = e.target.closest('button[data-saveitem]');
+  if (sv) {
+    const row = sv.closest('.arow');
+    const price = parseFloat(row.querySelector('input.pricein').value);
+    const active = row.querySelector('input.chk').checked;
+    if (isNaN(price) || price < 0 || price > 500) { sv.textContent = '✕'; return; }
+    sv.disabled = true;
+    const { error } = await db.from('menu_items').update({ price, active }).eq('id', sv.dataset.saveitem);
+    sv.disabled = false;
+    sv.innerHTML = error ? '✕' : '<span class="okflash">✓</span>';
+    if (!error) menuData = null; // customer menu reloads fresh
+    setTimeout(() => { sv.textContent = '💾'; }, 1800);
+    return;
+  }
+  const pub = e.target.closest('button[data-pub]');
+  if (pub) {
+    pub.disabled = true;
+    await db.from('specials').update({ published: pub.dataset.pub === 'on' }).eq('id', pub.dataset.id);
+    admEspeciales();
+    return;
+  }
+  const del = e.target.closest('button[data-delspec]');
+  if (del) {
+    if (!confirm(t('¿Eliminar este especial?', 'Delete this special?'))) return;
+    del.disabled = true;
+    await db.from('specials').delete().eq('id', del.dataset.delspec);
+    admEspeciales();
+    return;
+  }
+});
+
+async function admMenu() {
+  const [{ data: cats }, { data: items }] = await Promise.all([
+    db.from('menu_categories').select('*').order('sort'),
+    db.from('menu_items').select('*').order('sort')
+  ]);
+  el('adm-body').innerHTML = `<div class="paynote">${t('Cambia precio o disponibilidad y toca 💾', 'Change price or availability and tap 💾')}</div>` +
+    (cats || []).map(c => {
+      const its = (items || []).filter(i => i.category_id === c.id);
+      if (!its.length) return '';
+      return `<div class="mcat"><h3>${esc(c.name_es)}${c.active ? '' : ' <span class="pill cancelled">oculta</span>'}</h3>` +
+        its.map(i => `
+          <div class="arow" data-item="${i.id}">
+            <div class="who">${esc(i.name_es)}</div>
+            <span style="display:flex;align-items:center;gap:8px;">
+              $<input class="pricein" type="number" step="0.05" min="0" value="${Number(i.price).toFixed(2)}" />
+              <input class="chk" type="checkbox" ${i.active ? 'checked' : ''} title="${t('Disponible', 'Available')}" />
+              <button class="obtn ghost" data-saveitem="${i.id}">💾</button>
+            </span>
+          </div>`).join('') + `</div>`;
+    }).join('');
+}
+
+async function admEspeciales() {
+  const { data: rows } = await db.from('specials').select('*').order('created_at', { ascending: false });
+  el('adm-body').innerHTML = `
+    <div class="admform">
+      <label>${t('Título (ES)', 'Title (ES)')}</label><input id="sp-tes" />
+      <label>${t('Título (EN)', 'Title (EN)')}</label><input id="sp-ten" />
+      <label>${t('Detalle (ES, opcional)', 'Body (ES, optional)')}</label><textarea id="sp-bes"></textarea>
+      <label>${t('Detalle (EN, opcional)', 'Body (EN, optional)')}</label><textarea id="sp-ben"></textarea>
+      <button class="btn" id="sp-add">${t('Publicar especial', 'Publish special')}</button>
+      <p class="msg" id="sp-msg"></p>
+    </div>
+    <div class="secthead">${t('Publicados y anteriores', 'Published & past')}</div>
+    ${(rows || []).map(s => `
+      <div class="arow"><div class="who">${esc(s.title_es)}<span class="sub">${esc(s.title_en)} · ${new Date(s.created_at).toLocaleDateString('es-PR')}</span></div>
+        <span class="obtns">
+          <button class="obtn ${s.published ? 'ghost' : ''}" data-pub="${s.published ? 'off' : 'on'}" data-id="${s.id}">${s.published ? t('Ocultar', 'Hide') : t('Publicar', 'Publish')}</button>
+          <button class="obtn danger" data-delspec="${s.id}">🗑</button>
+        </span></div>`).join('') || `<div class="empty">—</div>`}`;
+  el('sp-add').addEventListener('click', async () => {
+    const tes = el('sp-tes').value.trim(), ten = el('sp-ten').value.trim();
+    const msg = el('sp-msg'); msg.className = 'msg';
+    if (!tes || !ten) { msg.className = 'msg err'; msg.textContent = t('Pon el título en ambos idiomas.', 'Add the title in both languages.'); return; }
+    const { error } = await db.from('specials').insert({
+      title_es: tes, title_en: ten,
+      body_es: el('sp-bes').value.trim() || null, body_en: el('sp-ben').value.trim() || null,
+      published: true
+    });
+    if (error) { msg.className = 'msg err'; msg.textContent = t('No se pudo publicar.', 'Could not publish.'); return; }
+    admEspeciales();
+  });
+}
 
 /* ----- light polling while looking at live lists ----- */
 setInterval(() => {
