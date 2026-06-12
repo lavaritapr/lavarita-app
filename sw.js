@@ -1,5 +1,5 @@
 /* La Varita PWA service worker — shell cache, network-first for navigation */
-const CACHE = 'lavarita-v10';
+const CACHE = 'lavarita-v11';
 const SHELL = [
   './',
   './index.html',
@@ -20,6 +20,25 @@ self.addEventListener('activate', (e) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_err) { d = { title: 'La Varita', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'La Varita', {
+    body: d.body || '',
+    icon: './assets/icon-192.png',
+    badge: './assets/icon-192.png',
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow(e.notification.data?.url || './');
+  }));
 });
 
 self.addEventListener('fetch', (e) => {

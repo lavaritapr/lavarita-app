@@ -75,6 +75,8 @@
   .hello h2 em{font-style:italic;font-weight:500;color:var(--clay);}
   .founder{display:inline-flex;align-items:center;gap:.45em;font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;background:var(--oxblood);color:var(--cream);padding:.45em .7em;border-radius:3px;}
   .reward-banner{margin-top:16px;background:var(--oxblood);color:var(--cream);border-radius:8px;padding:14px 16px;font-size:1rem;display:flex;gap:.6em;align-items:center;box-shadow:0 10px 24px rgba(177,33,40,.3);}
+  .pushcard{margin-top:16px;background:var(--cream);border:1.5px dashed var(--clay);border-radius:10px;padding:14px 16px;}
+  .pushcard .ptext{font-size:.95rem;line-height:1.5;margin-bottom:10px;}
 
   .ticket{background:var(--cream);border-radius:10px;padding:22px;position:relative;margin-top:22px;box-shadow:0 16px 36px rgba(38,38,38,.16);transform:rotate(-.6deg);}
   .ticket::before,.ticket::after{content:"";position:absolute;left:0;right:0;height:12px;background-image:radial-gradient(circle at 6px 6px, var(--paper) 4.5px, transparent 5.5px);background-size:16px 12px;background-position:center;}
@@ -291,6 +293,14 @@
   </div>
 
   <div class="reward-banner hide" id="reward-banner">🔥 <span data-en="You have a FREE plate waiting — show your code at the register!">¡Tienes un plato GRATIS esperando — muestra tu código en caja!</span></div>
+
+  <div class="pushcard hide" id="push-card">
+    <div class="ptext" id="push-text"></div>
+    <div class="obtns">
+      <button class="obtn" id="push-on">🔔 <span data-en="Enable alerts">Activar avisos</span></button>
+      <button class="obtn ghost" id="push-no" data-en="Not now">Ahora no</button>
+    </div>
+  </div>
 
   <div class="ticket">
     <div class="thead">
@@ -594,6 +604,7 @@ async function loadHome(user) {
   holes.appendChild(free);
 
   el('membercode').textContent = profile.member_code;
+  setupPushCard();
   QRCode.toCanvas(el('qr'), profile.member_code, { width: 192, margin: 1, color: { dark: '#262626', light: '#F6EFDF' } });
 
   const list = el('specials-list');
@@ -924,7 +935,11 @@ el('queue-list').addEventListener('click', async (e) => {
   const b = e.target.closest('button[data-order]'); if (!b) return;
   if (b.dataset.status === 'cancelled' && !confirm(t('¿Cancelar esta orden?', 'Cancel this order?'))) return;
   b.disabled = true;
-  await db.rpc('order_set_status', { p_order_id: b.dataset.order, p_status: b.dataset.status });
+  const { data: res } = await db.rpc('order_set_status', { p_order_id: b.dataset.order, p_status: b.dataset.status });
+  if (res?.ok && b.dataset.status === 'ready') {
+    // buzz the customer: your order is ready
+    db.functions.invoke('send-push', { body: { type: 'order_ready', order_id: b.dataset.order } }).catch(() => {});
+  }
   loadQueue();
 });
 
@@ -1206,6 +1221,7 @@ async function admEspeciales() {
       <label>${t('Título', 'Title')}</label><input id="sp-t" placeholder="${t('Ej: Jueves de Costillas', 'E.g.: Ribs Thursday')}" />
       <label>${t('Detalle (opcional)', 'Body (optional)')}</label><textarea id="sp-b"></textarea>
       <label>${t('Precio (opcional)', 'Price (optional)')}</label><input id="sp-p" type="number" step="0.05" min="0" placeholder="0.00" />
+      <label class="agree" style="display:flex;gap:.5em;align-items:center;font-size:.92rem;margin:2px 0 10px;cursor:pointer;"><input type="checkbox" id="sp-push" class="chk" checked /> 📣 ${t('Enviar notificación push a los miembros', 'Send push notification to members')}</label>
       <button class="btn" id="sp-add">${t('Publicar especial', 'Publish special')}</button>
       <p class="msg" id="sp-msg" role="status"></p>
     </div>
@@ -1237,9 +1253,64 @@ async function admEspeciales() {
     });
     el('sp-add').disabled = false;
     if (error) { msg.className = 'msg err'; msg.textContent = t('No se pudo publicar.', 'Could not publish.'); return; }
+    if (el('sp-push').checked) {
+      const pTitle = src === 'es' ? ti : tT;
+      const pBody = (isNaN(pr) ? '' : '$' + pr.toFixed(2) + ' · ') + (src === 'es' ? (bo || '') : (tB || ''));
+      db.functions.invoke('send-push', { body: { type: 'broadcast', title: '🔥 ' + pTitle, body: pBody } }).catch(() => {});
+    }
     admEspeciales();
   });
 }
+
+/* ----- web push opt-in ----- */
+const VAPID_PUBLIC = 'BAiHGwg4yBNtNyFgJmcNGKsNhrFxAKoE_RO6scP884JoU5MEx2ifq3o50n3wM3e826wp6VUlDpyOicxS-XgR7zQ';
+function urlB64ToUint8Array(s) {
+  const pad = '='.repeat((4 - s.length % 4) % 4);
+  const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function subscribeAndSave() {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC) });
+  const j = sub.toJSON();
+  await db.from('push_subscriptions').upsert(
+    { customer_id: currentProfile.id, endpoint: sub.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth },
+    { onConflict: 'endpoint' });
+}
+function setupPushCard() {
+  const card = el('push-card');
+  if (localStorage.getItem('lv_push_no') === '1') return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isIOS && !standalone) {
+    el('push-text').textContent = t(
+      '🔔 Para recibir avisos de especiales y de tu orden, añade la app a tu pantalla de inicio: Compartir ▸ "Añadir a pantalla de inicio".',
+      '🔔 To get alerts for specials and your order, add the app to your home screen: Share ▸ "Add to Home Screen".');
+    el('push-on').classList.add('hide');
+    card.classList.remove('hide');
+    return;
+  }
+  if (!pushSupported()) return;
+  if (Notification.permission === 'granted') { subscribeAndSave().catch(() => {}); return; }
+  if (Notification.permission === 'denied') return;
+  el('push-text').textContent = t(
+    'Recibe un aviso cuando tu orden esté lista y entérate primero de los especiales.',
+    'Get an alert when your order is ready and hear about specials first.');
+  el('push-on').classList.remove('hide');
+  card.classList.remove('hide');
+}
+el('push-on').addEventListener('click', async () => {
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') await subscribeAndSave();
+  } catch (_e) { /* unsupported or blocked */ }
+  el('push-card').classList.add('hide');
+});
+el('push-no').addEventListener('click', () => {
+  localStorage.setItem('lv_push_no', '1');
+  el('push-card').classList.add('hide');
+});
 
 /* ----- light polling while looking at live lists ----- */
 setInterval(() => {
@@ -1272,7 +1343,7 @@ document.addEventListener('visibilitychange', async () => {
 applyLang();
 
 /* ---------- PWA ---------- */
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 </script>
