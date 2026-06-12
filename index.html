@@ -220,6 +220,17 @@
   .fbphoto{max-width:100%;border-radius:8px;margin-top:8px;border:1.5px solid var(--ink);display:block;}
   .admform input,.admform textarea{margin-bottom:8px;}
   .okflash{color:var(--olive);font-family:var(--mono);font-size:.7rem;}
+
+  /* ---------- desktop command center (owners/staff on big screens) ---------- */
+  @media (min-width: 920px) {
+    #view-admin.wrap, #view-staff.wrap { max-width: 1080px; }
+    .stats { grid-template-columns: repeat(4, 1fr); }
+    #queue-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+    #queue-list .ocard { margin-top: 0; }
+    #queue-list .empty, #queue-list .okflash { grid-column: 1 / -1; }
+    #adm-body .fbcardA { max-width: 720px; }
+    .scanbox { max-width: 560px; }
+  }
   .rolesel{font-family:var(--mono);font-size:.7rem;padding:.35em .4em;border:1.5px solid var(--hair);border-radius:5px;background:var(--paper);color:var(--ink);}
   .spr{font-family:var(--mono);font-weight:700;font-size:.8rem;color:var(--oxblood);white-space:nowrap;margin-left:.5em;}
   .admform select{width:100%;font-family:var(--serif);font-size:1rem;padding:.65em .8em;border:1.5px solid var(--hair);border-radius:6px;background:var(--paper);color:var(--ink);margin-bottom:8px;}
@@ -940,7 +951,15 @@ el('queue-list').addEventListener('click', async (e) => {
     // buzz the customer: your order is ready
     db.functions.invoke('send-push', { body: { type: 'order_ready', order_id: b.dataset.order } }).catch(() => {});
   }
-  loadQueue();
+  await loadQueue();
+  if (res?.ok && res.punch_awarded) {
+    const n = document.createElement('div');
+    n.className = 'okflash';
+    n.style.cssText = 'padding:10px 0;font-size:.78rem;';
+    n.textContent = t(`✓ Sello otorgado automáticamente (${res.punches}/9)`, `✓ Stamp awarded automatically (${res.punches}/9)`);
+    el('queue-list').prepend(n);
+    setTimeout(() => n.remove(), 5000);
+  }
 });
 
 /* ----- staff: member QR scanner ----- */
