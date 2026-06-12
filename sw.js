@@ -1,5 +1,5 @@
 /* La Varita PWA service worker — shell cache, network-first for navigation */
-const CACHE = 'lavarita-v12';
+const CACHE = 'lavarita-v13';
 const SHELL = [
   './',
   './index.html',
