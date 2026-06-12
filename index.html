@@ -214,15 +214,6 @@
   .arow .sub{font-family:var(--mono);font-size:.6rem;color:var(--ink-soft);display:block;margin-top:2px;}
   .searchbox{width:100%;margin:4px 0 10px;}
   .pricein{width:80px;font-family:var(--mono);font-size:.85rem;padding:.45em .5em;border:1.5px solid var(--hair);border-radius:5px;background:var(--paper);color:var(--ink);}
-  .costin{width:70px;font-family:var(--mono);font-size:.85rem;padding:.45em .5em;border:1.5px dashed var(--hair);border-radius:5px;background:var(--paper);color:var(--ink-soft);}
-  .stat.good{border-color:var(--olive);border-width:2.5px;}
-  .stat.warn{border-color:var(--ember);border-width:2.5px;}
-  .stat.bad{border-color:var(--oxblood);border-width:2.5px;}
-  .costtable{width:100%;font-size:.85rem;border-collapse:collapse;margin-top:8px;}
-  .costtable th{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);text-align:right;padding:4px 6px;border-bottom:1.5px solid var(--ink);}
-  .costtable th:first-child{text-align:left;}
-  .costtable td{padding:5px 6px;border-bottom:1px dotted var(--hair);text-align:right;font-family:var(--mono);font-size:.74rem;}
-  .costtable td:first-child{text-align:left;font-family:var(--serif);font-size:.9rem;}
   .chk{width:18px;height:18px;accent-color:var(--clay);}
   .fbcardA{background:var(--cream);border:1.5px solid var(--ink);border-radius:10px;padding:12px 14px;margin-top:12px;}
   .sline{color:var(--clay);letter-spacing:2px;}
@@ -435,7 +426,6 @@
   <h2 class="pagetitle" data-en="Owner <em>panel</em>.">Panel del <em>dueño</em>.</h2>
   <div class="subnav" id="adm-nav">
     <button data-sec="resumen" class="on" data-en="Summary">Resumen</button>
-    <button data-sec="costos" data-en="Prime Cost">Costos</button>
     <button data-sec="clientes" data-en="Customers">Clientes</button>
     <button data-sec="opiniones" data-en="Feedback">Opiniones</button>
     <button data-sec="menu" data-en="Menu">Menú</button>
@@ -1068,7 +1058,6 @@ async function loadAdmin() {
   if (!currentProfile || currentProfile.role !== 'owner') return;
   el('adm-body').innerHTML = `<div class="empty">…</div>`;
   if (admSec === 'resumen') return admResumen();
-  if (admSec === 'costos') return admCostos();
   if (admSec === 'clientes') return admClientes();
   if (admSec === 'opiniones') return admOpiniones();
   if (admSec === 'menu') return admMenu();
@@ -1110,69 +1099,6 @@ async function admResumen() {
     ${topList.length ? topList.map(([n, q]) => `<div class="arow"><span>${esc(n)}</span><strong>${q}</strong></div>`).join('') : `<div class="empty">${t('Sin ventas aún', 'No sales yet')}</div>`}
     <div class="secthead">${t('Top municipios', 'Top municipalities')}</div>
     ${muniList.length ? muniList.map(([n, q]) => `<div class="arow"><span>${esc(n)}</span><strong>${q}</strong></div>`).join('') : `<div class="empty">—</div>`}`;
-}
-
-let admCostDays = 7;
-async function admCostos() {
-  const since = new Date(Date.now() - admCostDays * 864e5).toISOString();
-  const [{ data: items }, { data: sold }, { data: laborRow }] = await Promise.all([
-    db.from('menu_items').select('id, name_es, price, food_cost'),
-    db.from('order_items').select('item_id, name_es, qty, line_total, orders!inner(status, created_at)')
-      .eq('orders.status', 'completed').gte('orders.created_at', since),
-    db.from('biz_settings').select('value').eq('key', 'weekly_labor_cost').maybeSingle()
-  ]);
-  const byId = Object.fromEntries((items || []).map(i => [i.id, i]));
-  const agg = {};
-  let sales = 0, cogs = 0, missingCost = new Set();
-  (sold || []).forEach(li => {
-    sales += Number(li.line_total);
-    const it = li.item_id ? byId[li.item_id] : null;
-    const cost = it && it.food_cost != null ? Number(it.food_cost) * li.qty : null;
-    if (cost === null) missingCost.add(li.name_es); else cogs += cost;
-    const k = li.name_es;
-    agg[k] = agg[k] || { qty: 0, rev: 0, cost: 0, hasCost: cost !== null };
-    agg[k].qty += li.qty; agg[k].rev += Number(li.line_total);
-    if (cost !== null) agg[k].cost += cost; else agg[k].hasCost = false;
-  });
-  const weeklyLabor = laborRow ? parseFloat(laborRow.value) : NaN;
-  const labor = isNaN(weeklyLabor) ? null : weeklyLabor * admCostDays / 7;
-  const foodPct = sales > 0 ? cogs / sales * 100 : null;
-  const laborPct = (labor !== null && sales > 0) ? labor / sales * 100 : null;
-  const primePct = (foodPct !== null && laborPct !== null) ? foodPct + laborPct : null;
-  const primeClass = primePct === null ? '' : primePct <= 60 ? 'good' : primePct <= 65 ? 'warn' : 'bad';
-  const pf = (v) => v === null ? '—' : v.toFixed(1) + '%';
-  const rows = Object.entries(agg).sort((a, b) => b[1].rev - a[1].rev);
-
-  el('adm-body').innerHTML = `
-    <div class="obtns" style="margin-bottom:12px;">
-      <button class="obtn ${admCostDays === 7 ? '' : 'ghost'}" data-costdays="7">7 ${t('días', 'days')}</button>
-      <button class="obtn ${admCostDays === 30 ? '' : 'ghost'}" data-costdays="30">30 ${t('días', 'days')}</button>
-    </div>
-    <div class="stats">
-      <div class="stat"><div class="v">$${sales.toFixed(2)}</div><div class="l">${t('Ventas (app)', 'Sales (app)')}</div></div>
-      <div class="stat"><div class="v">$${cogs.toFixed(2)}</div><div class="l">${t('COGS teórico', 'Theoretical COGS')}</div></div>
-      <div class="stat"><div class="v">${pf(foodPct)}</div><div class="l">Food cost %</div></div>
-      <div class="stat"><div class="v">${labor === null ? '—' : '$' + labor.toFixed(2)}</div><div class="l">${t('Labor (estimado)', 'Labor (estimated)')}</div></div>
-      <div class="stat"><div class="v">${pf(laborPct)}</div><div class="l">Labor %</div></div>
-      <div class="stat ${primeClass}"><div class="v">${pf(primePct)}</div><div class="l">PRIME COST ${t('(meta ≤60%)', '(target ≤60%)')}</div></div>
-    </div>
-    ${missingCost.size ? `<div class="paynote" style="margin-top:10px;">⚠ ${missingCost.size} ${t('productos vendidos sin costo definido (no cuentan en COGS): ', 'sold items missing a cost (excluded from COGS): ')}${esc([...missingCost].slice(0, 5).join(', '))}${missingCost.size > 5 ? '…' : ''}</div>` : ''}
-    <div class="secthead">${t('Labor semanal estimado', 'Estimated weekly labor')}</div>
-    <div class="arow" style="border:none;">
-      <span style="display:flex;align-items:center;gap:8px;">$
-        <input class="pricein" id="labor-in" type="number" step="1" min="0" value="${isNaN(weeklyLabor) ? '' : weeklyLabor}" placeholder="0" />
-        <button class="obtn ghost" data-savelabor="1">💾</button>
-      </span>
-      <span class="sub">${t('Nómina + cargas de una semana típica. Se prorratea al período.', 'Typical weekly payroll + burden. Prorated to the period.')}</span>
-    </div>
-    <div class="secthead">${t('Margen por producto', 'Margin per item')} (${admCostDays}d)</div>
-    ${rows.length ? `<table class="costtable"><tr><th>${t('Producto', 'Item')}</th><th>${t('Vend.', 'Sold')}</th><th>${t('Ventas', 'Sales')}</th><th>${t('Costo', 'Cost')}</th><th>${t('Margen', 'Margin')}</th></tr>
-      ${rows.map(([n, a]) => {
-        const mg = a.hasCost ? a.rev - a.cost : null;
-        const mgp = a.hasCost && a.rev > 0 ? Math.round(mg / a.rev * 100) + '%' : '—';
-        return `<tr><td>${esc(n)}</td><td>${a.qty}</td><td>$${a.rev.toFixed(2)}</td><td>${a.hasCost ? '$' + a.cost.toFixed(2) : '—'}</td><td>${a.hasCost ? '$' + mg.toFixed(2) + ' · ' + mgp : '—'}</td></tr>`;
-      }).join('')}</table>` : `<div class="empty">${t('Sin ventas en el período', 'No sales in the period')}</div>`}
-    <div class="paynote" style="margin-top:14px;">${t('COGS teórico = costo por plato × vendidos (solo órdenes de la app). Con Clover se sumarán las ventas de caja.', 'Theoretical COGS = per-plate cost × sold (app orders only). Register sales join once Clover is live.')}</div>`;
 }
 
 async function admClientes() {
@@ -1235,27 +1161,14 @@ el('adm-body').addEventListener('click', async (e) => {
   if (sv) {
     const row = sv.closest('.arow');
     const price = parseFloat(row.querySelector('input.pricein').value);
-    const costRaw = row.querySelector('input.costin').value.trim();
-    const food_cost = costRaw === '' ? null : parseFloat(costRaw);
     const active = row.querySelector('input.chk').checked;
-    if (isNaN(price) || price < 0 || price > 500 || (food_cost !== null && (isNaN(food_cost) || food_cost < 0))) { sv.textContent = '✕'; return; }
+    if (isNaN(price) || price < 0 || price > 500) { sv.textContent = '✕'; return; }
     sv.disabled = true;
-    const { error } = await db.from('menu_items').update({ price, active, food_cost }).eq('id', sv.dataset.saveitem);
+    const { error } = await db.from('menu_items').update({ price, active }).eq('id', sv.dataset.saveitem);
     sv.disabled = false;
     sv.innerHTML = error ? '✕' : '<span class="okflash">✓</span>';
     if (!error) menuData = null; // customer menu reloads fresh
     setTimeout(() => { sv.textContent = '💾'; }, 1800);
-    return;
-  }
-  const pd = e.target.closest('button[data-costdays]');
-  if (pd) { admCostDays = +pd.dataset.costdays; admCostos(); return; }
-  const sl = e.target.closest('button[data-savelabor]');
-  if (sl) {
-    const v = parseFloat(el('labor-in').value);
-    if (isNaN(v) || v < 0) { sl.textContent = '✕'; return; }
-    sl.disabled = true;
-    await db.from('biz_settings').upsert({ key: 'weekly_labor_cost', value: String(v), updated_at: new Date().toISOString() });
-    admCostos();
     return;
   }
   const pub = e.target.closest('button[data-pub]');
@@ -1305,19 +1218,15 @@ async function admMenu() {
       const its = (items || []).filter(i => i.category_id === c.id);
       if (!its.length) return '';
       return `<div class="mcat"><h3>${esc(c.name_es)}${c.active ? '' : ' <span class="pill cancelled">oculta</span>'}</h3>` +
-        its.map(i => {
-          const m = (i.food_cost != null && Number(i.price) > 0)
-            ? `<span class="sub">${t('costo', 'cost')} $${Number(i.food_cost).toFixed(2)} · ${t('margen', 'margin')} ${Math.round((1 - i.food_cost / i.price) * 100)}%</span>` : '';
-          return `
+        its.map(i => `
           <div class="arow" data-item="${i.id}">
-            <div class="who">${esc(i.name_es)}${m}</div>
+            <div class="who">${esc(i.name_es)}</div>
             <span style="display:flex;align-items:center;gap:8px;">
               $<input class="pricein" type="number" step="0.05" min="0" value="${Number(i.price).toFixed(2)}" />
-              <input class="costin" type="number" step="0.05" min="0" placeholder="${t('costo', 'cost')}" value="${i.food_cost != null ? Number(i.food_cost).toFixed(2) : ''}" />
               <input class="chk" type="checkbox" ${i.active ? 'checked' : ''} title="${t('Disponible', 'Available')}" />
               <button class="obtn ghost" data-saveitem="${i.id}">💾</button>
             </span>
-          </div>`; }).join('') + `</div>`;
+          </div>`).join('') + `</div>`;
     }).join('');
 }
 
